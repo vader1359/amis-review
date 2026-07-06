@@ -1,0 +1,97 @@
+﻿order_id,customer,salesperson,amount,delivery_status,execution_status,accounting_record_status,order_date,delivery_due_at,days_overdue
+DH-0002721,Đỗ Anh Tú,Trần Kiều Diễm,0.0,Chưa giao,Đang thực hiện,Từ chối ghi doanh số,2025-01-09,2025-01-09,521
+DH-0002702,Trung Bùi (Mr.),Đinh Mạnh Đức,63160000.0,Chưa giao,Chưa thực hiện,Chưa ghi doanh số,2025-01-06,2025-01-10,520
+DH-0002782,Nguyễn Thị Trang Nhung,Phan Thị Quỳnh Liên,264444.0,Đang giao,Đang thực hiện,Đã ghi doanh số,2025-01-18,2025-01-18,512
+DH-0002786,Nguyễn Thị Trang Nhung,Phan Thị Quỳnh Liên,2201596.0,Đang giao,Đang thực hiện,Đã ghi doanh số,2025-01-18,2025-01-18,512
+DH-0002624,Nguyễn Thị Minh Thư,Đinh Mạnh Đức,160959820.0,Đang giao,Đang thực hiện,Chưa ghi doanh số,2024-12-18,2025-01-19,511
+DH-0002572,Công ty cổ phần đầu tư xây dựng đô thị Bình Minh,Đinh Mạnh Đức,22874080.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2024-11-28,2025-01-20,510
+DH-0002897,CÔNG TY TNHH NUKIA,Sử Triều Vỹ,390000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2025-02-19,2025-02-19,480
+DH-0003156,Việt Anh Nguyễn (Ms),Phan Thị Quỳnh Liên,1360000.0,Chưa giao,Đang thực hiện,Từ chối ghi doanh số,2025-04-08,2025-04-12,428
+DH-0003181,Kim Eunseon,Võ Thanh Uyên,114640000.0,Chưa giao,Chưa thực hiện,Từ chối ghi doanh số,2025-04-14,2025-04-14,426
+DH-0003263,Sune (Mr),Võ Thanh Uyên,80586801.0,Chưa giao,Đang thực hiện,Từ chối ghi doanh số,2025-04-25,2025-04-25,415
+DH-0003418,Adli Dinid,Trần Ngọc Phương Thanh,3138000.0,Chưa giao,Đang thực hiện,Từ chối ghi doanh số,2025-05-23,2025-05-21,389
+DH-0003500,Yeom Hye Sun (Ms.),Võ Thanh Uyên,28450999.0,Đang giao,Đang thực hiện,Đã ghi doanh số,2025-06-06,2025-06-06,373
+DH-0002253,Hồng Anh (Ms),Trần Hữu Quân,335750000.0,Chưa giao,Chưa thực hiện,Đã ghi doanh số,2024-06-29,2025-06-07,372
+DH-0003445,An Saigon Restaurant,Đinh Mạnh Đức,38775000.0,Đang giao,Đang thực hiện,Đã ghi doanh số,2025-06-02,2025-06-20,359
+DH-0003715,Trường Quốc Tế Đức TP.Hồ Chí Minh,Đinh Mạnh Đức,172965206.0,Đang giao,Đang thực hiện,Đã ghi doanh số,2025-07-08,2025-07-12,337
+DH-0003357,Đặng Hải Yến (Ms.),Đinh Mạnh Đức,43520000.0,Đang giao,Đang thực hiện,Đã ghi doanh số,2025-05-12,2025-08-10,308
+DH-0003973,CÔNG TY TNHH THIẾT KẾ VÀ THI CÔNG NỘI THẤT HOLM DESIGN,Đinh Mạnh Đức,0.0,Chưa giao,Đang thực hiện,Đã ghi doanh số,2025-08-20,2025-08-21,297
+DH-0003992,CÔNG TY CỔ PHẦN DECOX,Đinh Mạnh Đức,1884999.0,Chưa giao,Đang thực hiện,Từ chối ghi doanh số,2025-08-22,2025-09-03,284
+DH-0004078,Thach (Mr.),Trần Hữu Quân,9500000.0,Chưa giao,Đang thực hiện,Đã ghi doanh số,2025-09-07,2025-09-08,279
+DH-0004100,CÔNG TY TNHH MOONSTONE WELLNESS VIỆT NAM,Trần Kiều Diễm,0.0,Đang giao,Đang thực hiện,Đã ghi doanh số,2025-09-10,2025-09-11,276
+DH-0003942,CÔNG TY CỔ PHẦN M2W,Đinh Mạnh Đức,19883700.0,Đang giao,Đang thực hiện,Đã ghi doanh số,2025-08-18,2025-09-20,267
+DH-0003060,Đặng Hải Yến (Ms.),Sử Triều Vỹ,258820000.0,Chưa giao,Chưa thực hiện,Đã ghi doanh số,2025-03-21,2025-09-30,257
+DH-0004376,Nguyễn Thị Minh Thư (Ms.),Trần Hữu Quân,0.0,Chưa giao,Đang thực hiện,Đã ghi doanh số,2025-10-27,2025-10-27,230
+DH-0003828,CÔNG TY CỔ PHẦN NHẬT NGUYÊN,Đinh Mạnh Đức,1908769456.0,Đang giao,Đang thực hiện,Đã ghi doanh số,2025-08-01,2025-10-31,226
+DH-0004424,Diệp Nguyễn (Kenh14),Trần Thị Thùy Linh,0.0,Chưa giao,Chưa thực hiện,Đã ghi doanh số,2025-11-01,2025-11-01,225
+DH-0004423,CÔNG TY TNHH ZEE,Trần Thị Thùy Linh,0.0,Chưa giao,Chưa thực hiện,Đã ghi doanh số,2025-11-01,2025-11-01,225
+DH-0004185,CÔNG TY TNHH SAIGON WATERGO,Đinh Mạnh Đức,71580000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2025-09-26,2025-11-10,216
+DH-0005021,Tom Kim (Mr.),Võ Thanh Uyên,59216000.0,Chưa giao,Đang thực hiện,Từ chối ghi doanh số,2025-11-24,2025-11-24,202
+DH-0005007,CÔNG TY TNHH THE SHERPA,Trần Hữu Quân,0.0,Chưa giao,Đang thực hiện,Đã ghi doanh số,2025-11-21,2025-11-28,198
+DH-0005044,Chau Diep Anh Khoa (Mr.),Võ Thanh Uyên,143965000.0,Đang giao,Đang thực hiện,Chưa ghi doanh số,2025-11-28,2025-11-30,196
+DH-0005239,Chau Diep Anh Khoa (Mr.),Võ Thanh Uyên,51166101.0,Đang giao,Đang thực hiện,Đã ghi doanh số,2025-12-31,2025-12-01,195
+DH-0004048,Julia Fell (Ms.),Võ Thanh Uyên,79839500.0,Đang giao,Đang thực hiện,Chưa ghi doanh số,2025-08-31,2025-12-07,189
+DH-0003526,CÔNG TY CỔ PHẦN ĐẦU TƯ VÀ QUẢN LÝ KHÁCH SẠN AKYN,Trần Hữu Quân,411160000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2025-06-06,2025-12-11,185
+DH-0005142,CÔNG TY TNHH HOUSE OF STEEL,Trần Thị Thùy Linh,0.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2025-12-12,2025-12-12,184
+DH-0004468,Công ty thiết kế nội thất LifeStyleConnected,Trần Thị Thùy Linh,141880000.0,Chưa giao,Đang thực hiện,Từ chối ghi doanh số,2025-11-10,2025-12-13,183
+DH-0005211,Đặng Việt Dũng (Mr.),Võ Thanh Uyên,20870000.0,Đang giao,Đang thực hiện,Đã ghi doanh số,2025-12-26,2025-12-26,170
+DH-0005212,Nguyễn Nhung (Ms.),Trần Hữu Quân,0.0,Chưa giao,Đang thực hiện,Đã ghi doanh số,2025-12-26,2025-12-29,167
+DH-0004083,CÔNG TY TNHH P.A VIỆT NAM,Trần Hữu Quân,295130000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2025-09-08,2025-12-30,166
+DH-0005233,HỘ KINH DOANH CUP TO FARM,Võ Thanh Uyên,180000000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2025-12-30,2025-12-30,166
+DH-0004264,Nguyễn Huy (Mr.),Trần Hữu Quân,102360000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2025-10-08,2025-12-31,165
+DH-0004200,CÔNG TY TNHH P.A VIỆT NAM,Trần Hữu Quân,248480000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2025-09-25,2025-12-31,165
+DH-0003788,Nguyễn Huy (Mr.),Trần Hữu Quân,1143828401.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2025-07-21,2025-12-31,165
+DH-0005243,Diệp Nguyễn (Kenh14),Trần Thị Thùy Linh,0.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2025-12-31,2025-12-31,165
+DH-0005147,CÔNG TY CỔ PHẦN ĐẦU TƯ VÀ QUẢN LÝ KHÁCH SẠN AKYN,Trần Hữu Quân,1404800000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2025-12-14,2025-12-31,165
+DH-0005244,Rachel Lee (Ms.),Trần Thị Thùy Linh,0.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2025-12-31,2025-12-31,165
+DH-0005283,Huỳnh Thị Thanh Nga (Ms.),Võ Thanh Uyên,191493448.0,Đang giao,Đang thực hiện,Chưa ghi doanh số,2026-01-05,2026-01-07,158
+DH-0004014,CÔNG TY CỔ PHẦN ĐẦU TƯ VÀ QUẢN LÝ KHÁCH SẠN AKYN,Đinh Mạnh Đức,165826500.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2025-08-28,2026-01-08,157
+DH-0005307,Đặng Hải Yến (Ms.),Trần Hữu Quân,0.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-01-08,2026-01-09,156
+DH-0005319,Yeom Hye Sun (Ms.),Võ Thanh Uyên,1334500.0,Đang giao,Đang thực hiện,Đã ghi doanh số,2026-01-11,2026-01-11,154
+DH-0005337,Ca Dao (Ms.),Trần Hữu Quân,1140000.0,Chưa giao,Đang thực hiện,Đã ghi doanh số,2026-01-13,2026-01-13,152
+DH-0005321,Julia Lin (Ms.),Võ Thanh Uyên,10159500.0,Đang giao,Đang thực hiện,Đã ghi doanh số,2026-01-11,2026-01-13,152
+DH-0005366,Tú Vũ (Mr),Võ Thanh Uyên,0.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-01-18,2026-01-18,147
+DH-0005475,Phạm Thị Thanh Huyền (Ms.),Võ Thanh Uyên,51623800.0,Chưa giao,Đang thực hiện,Từ chối ghi doanh số,2026-01-29,2026-01-29,136
+DH-0005510,Jungmin (Ms),Võ Thanh Uyên,42949999.0,Chưa giao,Đang thực hiện,Từ chối ghi doanh số,2026-01-30,2026-01-30,135
+DH-0005249,CÔNG TY TNHH P.A VIỆT NAM,Trần Hữu Quân,62526000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2025-12-31,2026-01-31,134
+DH-0005263,Nguyễn Minh Trí (Mr.),Trần Hữu Quân,86900000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-01-02,2026-01-31,134
+DH-0005262,Nguyễn Minh Trí (Mr.),Trần Hữu Quân,161160001.0,Đang giao,Đang thực hiện,Đã ghi doanh số,2026-01-02,2026-01-31,134
+DH-0005365,Hương Dương (Ms.),Trần Hữu Quân,780640001.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-01-17,2026-02-01,133
+DH-0005536,CÔNG TY CỔ PHẦN DỊCH VỤ VẬN TẢI TRƯỜNG THỌ,Trần Hữu Quân,141235548.0,Đang giao,Đang thực hiện,Đã ghi doanh số,2026-02-02,2026-02-05,129
+DH-0005578,Lee Dongha (Mr.),Võ Thanh Uyên,2600000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-02-11,2026-02-11,123
+DH-0003679,CÔNG TY CỔ PHẦN ĐẦU TƯ VÀ QUẢN LÝ KHÁCH SẠN AKYN,Trần Hữu Quân,594930000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2025-06-29,2026-02-28,106
+DH-0005581,Tường Vy,Trần Hữu Quân,258379500.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-02-11,2026-02-28,106
+DH-0005640,Chau Diep Anh Khoa (Mr.),Võ Thanh Uyên,13420000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-03-06,2026-03-06,100
+DH-0005704,Kathy Lương Ms,Nguyễn Thị Bích Ngọc,0.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-03-18,2026-03-18,88
+DH-0005268,Seong Ah (Ms.),Trần Hữu Quân,310175679.0,Đang giao,Đang thực hiện,Chưa ghi doanh số,2026-01-02,2026-03-31,75
+DH-0005317,Chi Nguyễn (Ms.),Trần Hữu Quân,1101056000.0,Đang giao,Đang thực hiện,Chưa ghi doanh số,2026-01-10,2026-03-31,75
+DH-0058436,Laure (Ms.),Mai Kim Chi,0.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-04-13,2026-04-13,62
+DH-0004054,Kiên (Mr.),Võ Thanh Uyên,106813981.0,Đang giao,Đang thực hiện,Chưa ghi doanh số,2025-08-31,2026-04-15,60
+DH-0058466,Harley Trung (Mr.),Nguyễn Thị Bích Ngọc,8500000.0,Chưa giao,Đang thực hiện,Đã ghi doanh số,2026-04-17,2026-04-17,58
+DH-0005802,Kiên Phí (Mr.),Trần Hữu Quân,24771000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-04-03,2026-04-17,58
+DH-0058488,Jacques Le (Mr.),Võ Thanh Uyên,11356000.0,Đang giao,Đang thực hiện,Đã ghi doanh số,2026-04-22,2026-04-22,53
+DH-0005693,CÔNG TY TNHH CURIO HOSPITALITY,Đinh Mạnh Đức,235385929.0,Chưa giao,Đang thực hiện,Từ chối ghi doanh số,2026-04-07,2026-04-30,45
+DH-0005203,Phạm Mỹ Linh (Ms.),Đinh Mạnh Đức,448622983.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-01-16,2026-04-30,45
+DH-0058503,Hoàng Anh (Ms.),Đoàn Thị Minh Thư,1860000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-04-24,2026-05-07,38
+DH-0058570,CÔNG TY TNHH CÔ EM TRENDY,Trần Hữu Quân,240940000.0,Chưa giao,Đang thực hiện,Từ chối ghi doanh số,2026-05-11,2026-05-11,34
+DH-0005660,Linh (Ms.),Đinh Mạnh Đức,30498810.0,Chưa giao,Đang thực hiện,Từ chối ghi doanh số,2026-05-09,2026-05-12,33
+DH-0058616,Daniel Vamos Architect (Mr.),Đoàn Thị Minh Thư,0.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-05-16,2026-05-13,32
+DH-0058603,Nguyen Dinh Long (Mr.),Trần Hữu Quân,4527000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-05-14,2026-05-14,31
+DH-0058451,Su Park (Ms.),Nguyễn Thị Bích Ngọc,151953100.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-04-14,2026-05-15,30
+DH-0058612,Kathy Lương (Ms),Nguyễn Thị Bích Ngọc,0.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-05-16,2026-05-16,29
+DH-0058625,Trung Bùi (Mr.),Đoàn Thị Minh Thư,448400.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-05-18,2026-05-18,27
+DH-0058643,NanoHome Gallery,Đinh Mạnh Đức,0.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-05-20,2026-05-20,25
+DH-0058671,Nguyễn Minh Trí (Mr.),Trần Hữu Quân,172780000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-05-26,2026-05-26,19
+DH-0058676,Nguyễn Minh Trí (Mr.),Nguyễn Thị Minh Thương,184980000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-05-26,2026-05-26,19
+DH-0058705,Nicholas Difeliciantonio,Trần Hữu Quân,8491500.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-05-30,2026-05-30,15
+DH-0005451,CÔNG TY CỔ PHẦN ẨM THỰC KHÔNG GIAN 101,Trần Hữu Quân,690191000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-01-28,2026-05-31,14
+DH-0005760,CÔNG TY TNHH P.A VIỆT NAM,Trần Hữu Quân,50669999.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-03-26,2026-05-31,14
+DH-0005545,Nguyễn Minh Trí (Mr.),Trần Hữu Quân,279800000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-02-03,2026-06-01,13
+DH-0058741,CÔNG TY CỔ PHẦN NHIẾP ẢNH HÀ NỘI,Trần Hữu Quân,52270000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-06-04,2026-06-04,10
+DH-0005761,CÔNG TY TNHH ROUTINE VIỆT NAM,Đinh Mạnh Đức,61753999.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-04-24,2026-06-05,9
+DH-0058727,Trần Khánh Nhung (Ms),Võ Thanh Uyên,39008199.0,Đang giao,Đang thực hiện,Đã ghi doanh số,2026-06-02,2026-06-06,8
+DH-0058729,Trung Huynh (Mr.),Võ Thanh Uyên,8491500.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-06-02,2026-06-06,8
+DH-0058749,CÔNG TY TNHH KHU DU LỊCH SÔNG RAY,Võ Thanh Uyên,0.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-06-06,2026-06-06,8
+DH-0058743,Đặng Lệ Quyên (Ms.),Trần Hữu Quân,57679000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-06-05,2026-06-09,5
+DH-0005315,My Nguyễn (Ms.),Võ Thanh Uyên,55165000.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-01-10,2026-06-10,4
+DH-0005737,CÔNG TY TNHH HOUSE OF STEEL,Đinh Mạnh Đức,48172301.0,Chưa giao,Đang thực hiện,Chưa ghi doanh số,2026-06-06,2026-06-10,4

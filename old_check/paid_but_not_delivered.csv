@@ -1,0 +1,61 @@
+﻿order_id,customer,owner,amount,payment_status,delivery_status,execution_status,approved_at,recorded_at,days_since_approved
+DH-0001700,Nguyễn An Khang (Mr.),Lê Trần Gia Hân (2322),21240000.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2024-01-26 15:22:22,2024-01-03,869
+DH-0001702,NanoHome Gallery,Lương Thị Xuân An (NV000010),0.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2024-01-30 11:35:57,2024-01-04,865
+DH-0001848,Kim Huỳnh (Ms.),Lê Trần Gia Hân (2322),3000000.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2024-02-27 16:12:55,2024-02-27,837
+DH-0001906,CÔNG TY CỔ PHẦN ĐẦU TƯ PPC,Võ Thanh Uyên (NV000029),0.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2024-03-18 14:52:33,2024-03-14,817
+DH-0002029,CÔNG TY TNHH P.A VIỆT NAM,Sử Triều Vỹ (NV000004),88378968.0,Đã thanh toán,,Đang thực hiện,2024-05-06 10:20:09,2024-05-03,768
+DH-0002031,CÔNG TY CỔ PHẦN SIÊU DỮ LIỆU TRỰC TUYẾN,Sử Triều Vỹ (NV000004),88378968.0,Đã thanh toán,,Đang thực hiện,2024-05-10 14:58:03,2024-05-03,764
+DH-0002163,CÔNG TY TNHH P.A VIỆT NAM,Sử Triều Vỹ (NV000004),482993999.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2024-05-25 10:27:49,2024-05-25,749
+DH-0002076,CÔNG TY CỔ PHẦN SIÊU DỮ LIỆU TRỰC TUYẾN,Sử Triều Vỹ (NV000004),462677999.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2024-05-25 10:27:55,2024-05-22,749
+DH-0002032,CÔNG TY TNHH YANLAND,Sử Triều Vỹ (NV000004),111817082.0,Đã thanh toán,,Đang thực hiện,2024-05-28 10:09:37,2024-05-03,746
+DH-0002245,Trâm Lê (Ms.),Lương Thị Trà My (1488),0.0,Đã thanh toán,Chưa giao hàng,Đang thực hiện,2024-07-11 10:07:50,2024-06-26,702
+DH-0002286,Nguyễn Hoàng Minh (Mr.),Võ Thanh Uyên (NV000029),739000.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2024-07-15 08:59:32,2024-07-13,698
+DH-0002782,Nguyễn Thị Trang Nhung (Ms.),Phan Thị Quỳnh Liên (NV000092),264444.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2025-01-18 10:03:06,2025-01-18,511
+DH-0002786,Nguyễn Thị Trang Nhung (Ms.),Phan Thị Quỳnh Liên (NV000092),2201596.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2025-01-18 14:56:03,2025-01-18,511
+DH-0002484,Nguyễn Minh Hằng - Min (Ms.),Võ Thanh Uyên (NV000029),35009999.0,Đã thanh toán,,Đang thực hiện,2025-01-23 10:29:58,2024-10-19,506
+DH-0003357,Đặng Hải Yến (Ms.),Đinh Mạnh Đức (NV000088),43520000.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2025-05-14 09:44:20,2025-05-12,395
+DH-0003445,An Saigon Restaurant,Đinh Mạnh Đức (NV000088),38775000.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2025-06-05 10:39:00,2025-05-27,373
+DH-0003500,Yeom Hye Sun (Ms.),Võ Thanh Uyên (NV000029),28450999.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2025-06-08 11:21:19,2025-06-06,370
+DH-0003679,CÔNG TY CỔ PHẦN ĐẦU TƯ VÀ QUẢN LÝ KHÁCH SẠN AKYN,Trần Hữu Quân (NV000091),594930000.0,Đã thanh toán,,Đang thực hiện,2025-07-26 10:11:23,2025-06-29,322
+DH-0003788,Nguyễn Huy (Mr.),Trần Hữu Quân (NV000091),1143828401.0,Đã thanh toán,,Đang thực hiện,2025-07-30 16:53:37,2025-07-21,318
+DH-0003828,CÔNG TY CỔ PHẦN NHẬT NGUYÊN,Đinh Mạnh Đức (NV000088),1908769456.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2025-08-01 18:03:59,2025-07-26,316
+DH-0003942,CÔNG TY CỔ PHẦN M2W,Đinh Mạnh Đức (NV000088),19883700.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2025-08-18 17:06:16,2025-08-15,299
+DH-0004048,Julia Fell (Ms.),Võ Thanh Uyên (NV000029),79839500.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2025-09-02 09:33:32,2025-08-31,284
+DH-0004054,Kiên (Mr.),Võ Thanh Uyên (NV000029),106813981.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2025-09-03 18:33:29,2025-08-31,283
+DH-0004078,Thach (Mr.),Trần Hữu Quân (NV000091),9500000.0,Đã thanh toán,Chưa giao hàng,Đang thực hiện,2025-09-09 09:28:15,2025-09-07,277
+DH-0004100,CÔNG TY TNHH MOONSTONE WELLNESS VIỆT NAM,Trần Kiều Diễm (2974),0.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2025-09-10 18:37:18,2025-09-10,276
+DH-0003973,CÔNG TY TNHH THIẾT KẾ VÀ THI CÔNG NỘI THẤT HOLM DESIGN,Đinh Mạnh Đức (NV000088),0.0,Đã thanh toán,,Đang thực hiện,2025-09-17 13:37:41,2025-08-20,269
+DH-0004200,CÔNG TY TNHH P.A VIỆT NAM,Trần Hữu Quân (NV000091),248480000.0,Đã thanh toán,,Đang thực hiện,2025-10-03 13:28:32,2025-09-25,253
+DH-0004264,Nguyễn Huy (Mr.),Trần Hữu Quân (NV000091),102360000.0,Đã thanh toán,,Đang thực hiện,2025-10-11 12:56:29,2025-10-08,245
+DH-0004376,Nguyễn Thị Minh Thư (Ms.),Trần Hữu Quân (NV000091),0.0,Đã thanh toán,Chưa giao hàng,Đang thực hiện,2025-10-27 19:12:41,2025-10-27,229
+DH-0004083,CÔNG TY TNHH P.A VIỆT NAM,Trần Hữu Quân (NV000091),295130000.0,Đã thanh toán,,Đang thực hiện,2025-10-31 11:21:53,2025-10-11,225
+DH-0004423,CÔNG TY TNHH ZEE,Trần Thị Thùy Linh (NV000113),0.0,Đã thanh toán,Chưa giao hàng,Chưa thực hiện,2025-11-01 15:58:14,2025-11-01,224
+DH-0004424,Diệp Nguyễn (Kenh14),Trần Thị Thùy Linh (NV000113),0.0,Đã thanh toán,Chưa giao hàng,Chưa thực hiện,2025-11-01 15:58:18,2025-11-01,224
+DH-0005044,Chau Diep Anh Khoa (Mr.),Võ Thanh Uyên (NV000029),143965000.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2025-11-29 17:43:53,2025-11-28,196
+DH-0005097,Nguyễn Thị Minh Thư (Ms.),Trần Hữu Quân (NV000091),86900000.0,Đã thanh toán,,Đang thực hiện,2025-12-09 18:45:30,2025-12-05,186
+DH-0005211,Đặng Việt Dũng (Mr.),Võ Thanh Uyên (NV000029),20870000.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2025-12-27 17:42:22,2025-12-26,168
+DH-0005239,Chau Diep Anh Khoa (Mr.),Võ Thanh Uyên (NV000029),51166101.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2026-01-01 09:35:33,2025-12-31,163
+DH-0005262,Nguyễn Minh Trí (Mr.),Trần Hữu Quân (NV000091),161160001.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2026-01-03 17:45:37,2026-01-02,161
+DH-0005268,Seong Ah (Ms.),Trần Hữu Quân (NV000091),310175679.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2026-01-07 17:47:42,2026-01-02,157
+DH-0005319,Yeom Hye Sun (Ms.),Võ Thanh Uyên (NV000029),1334500.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2026-01-11 18:05:21,2026-01-11,153
+DH-0005283,Huỳnh Thị Thanh Nga (Ms.),Võ Thanh Uyên (NV000029),191493448.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2026-01-13 11:56:17,2026-01-05,151
+DH-0005337,Ca Dao (Ms.),Trần Hữu Quân (NV000091),1140000.0,Đã thanh toán,Chưa giao hàng,Đang thực hiện,2026-01-23 11:38:17,2026-01-13,141
+DH-0005147,CÔNG TY CỔ PHẦN ĐẦU TƯ VÀ QUẢN LÝ KHÁCH SẠN AKYN,Trần Hữu Quân (NV000091),1404800000.0,Đã thanh toán,,Đang thực hiện,2026-01-27 15:54:26,2025-12-14,137
+DH-0005321,Julia Lin (Ms.),Võ Thanh Uyên (NV000029),10159500.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2026-01-27 17:25:54,2026-01-11,137
+DH-0005536,CÔNG TY CỔ PHẦN DỊCH VỤ VẬN TẢI TRƯỜNG THỌ,Trần Hữu Quân (NV000091),141235548.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2026-02-02 12:12:59,2026-02-02,131
+DH-0005249,CÔNG TY TNHH P.A VIỆT NAM,Trần Hữu Quân (NV000091),62526000.0,Đã thanh toán,,Đang thực hiện,2026-02-25 17:31:48,2025-12-31,108
+DH-0005760,CÔNG TY TNHH P.A VIỆT NAM,Trần Hữu Quân (NV000091),50669999.0,Đã thanh toán,,Đang thực hiện,2026-04-02 10:08:52,2026-03-26,72
+DH-0005802,Kiên Phí (Mr.),Trần Hữu Quân (NV000091),24771000.0,Đã thanh toán,,Đang thực hiện,2026-04-07 14:44:12,2026-04-03,67
+DH-0058488,Jacques Le (Mr.),Võ Thanh Uyên (NV000029),11356000.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2026-04-28 10:59:03,2026-04-22,46
+DH-0058503,Hoàng Anh (Ms.),Đoàn Thị Minh Thư (NV000122),1860000.0,Đã thanh toán,,Đang thực hiện,2026-04-28 17:47:41,2026-04-24,46
+DH-0058451,Su Park (Ms.),Nguyễn Thị Bích Ngọc (NV000107),151953100.0,Đã thanh toán,,Đang thực hiện,2026-05-02 18:41:25,2026-04-14,42
+DH-0058466,Harley Trung (Mr.),Nguyễn Thị Bích Ngọc (NV000107),8500000.0,Đã thanh toán,,Đang thực hiện,2026-05-04 19:59:55,2026-04-17,40
+DH-0058536,Jang EunKyung (Ms.),Mai Kim Chi (NV000118),260059500.0,Đã thanh toán,,Đang thực hiện,2026-05-07 17:08:49,2026-05-04,37
+DH-0058603,Nguyen Dinh Long (Mr.),Trần Hữu Quân (NV000091),4527000.0,Đã thanh toán,,Đang thực hiện,2026-05-15 16:56:25,2026-05-14,29
+DH-0058625,Trung Bùi (Mr.),Đoàn Thị Minh Thư (NV000122),448400.0,Đã thanh toán,,Đang thực hiện,2026-05-18 13:51:09,2026-05-18,26
+DH-0058705,Nicholas Difeliciantonio,Trần Hữu Quân (NV000091),8491500.0,Đã thanh toán,,Đang thực hiện,2026-06-02 09:59:54,2026-05-30,11
+DH-0058722,Cindy ( Ms.),Trần Hữu Quân (NV000091),19231500.0,Đã thanh toán,,Đang thực hiện,2026-06-02 11:23:28,2026-06-02,11
+DH-0058727,Trần Khánh Nhung (Ms),Võ Thanh Uyên (NV000029),39008199.0,Đã thanh toán,Đang giao hàng,Đang thực hiện,2026-06-02 14:36:35,2026-06-02,11
+DH-0058729,Trung Huynh (Mr.),Võ Thanh Uyên (NV000029),8491500.0,Đã thanh toán,,Đang thực hiện,2026-06-03 09:33:57,2026-06-02,10
+DH-0058743,Đặng Lệ Quyên (Ms.),Trần Hữu Quân (NV000091),57679000.0,Đã thanh toán,,Đang thực hiện,2026-06-06 16:02:34,2026-06-05,7
+DH-0058741,CÔNG TY CỔ PHẦN NHIẾP ẢNH HÀ NỘI,Trần Hữu Quân (NV000091),52270000.0,Đã thanh toán,,Đang thực hiện,2026-06-09 09:29:42,2026-06-04,4

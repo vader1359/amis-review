@@ -18,6 +18,8 @@ def _release_store() -> server.PsiMemoryStore:
     }
     for source_type, filename in fixtures.items():
         store.persist(server.UploadRequest("team-a", "user-a", "2026-07", "2026-07-05", source_type, filename, (ROOT / "tests" / "fixtures" / filename).read_bytes()))
+    for mismatch in store.repository.rows("mismatches"):
+        mismatch["status"] = "known"
     return store
 
 
@@ -69,13 +71,28 @@ def test_release_gate_http_error_is_structured_and_side_effect_free() -> None:
         httpd.shutdown(); httpd.server_close(); thread.join(timeout=2)
 
 
-def test_release_http_allows_mismatch_diagnostics_for_authenticated_contributors() -> None:
+def test_release_http_blocks_active_mismatch_for_authenticated_admin() -> None:
     store = _release_store(); store.repository.insert("mismatches", {"id": "block", "reporting_period_id": "2026-07", "severity": "blocking", "status": "new"}); httpd, thread = _serve(store)
     try:
-        assert _post(httpd.server_address[1], {"reporting_period": "2026-07"})[0] == 201
+        assert _post(httpd.server_address[1], {"reporting_period": "2026-07"})[0] == 400
         assert _post(httpd.server_address[1], {"reporting_period": "2026-07"}, "viewer-token")[0] == 403
         assert _post(httpd.server_address[1], {"reporting_period": "2026-07"}, "reviewer-token")[0] == 403
         assert _post(httpd.server_address[1], {"reporting_period": "2026-07"}, "missing-token")[0] == 401
+    finally:
+        httpd.shutdown(); httpd.server_close(); thread.join(timeout=2)
+
+
+def test_reviewer_can_finish_new_mismatch_in_one_action() -> None:
+    store = server.PsiMemoryStore()
+    store.repository.insert("mismatches", {"id": "case-1", "status": "new"})
+    httpd, thread = _serve(store)
+    try:
+        connection = HTTPConnection("127.0.0.1", httpd.server_address[1])
+        connection.request("POST", "/api/mismatch", body=json.dumps({"mismatch_id": "case-1", "to_status": "known", "comment": "checked", "evidence": {"source": "test"}}), headers={"Authorization": "Bearer reviewer-token", "Content-Type": "application/json"})
+        response = connection.getresponse(); response.read(); connection.close()
+        assert response.status == 200
+        assert store.repository.lookup("mismatches", {"id": "case-1"})[0]["status"] == "known"
+        assert [row["to_status"] for row in store.repository.lookup("mismatch_history", {"mismatch_id": "case-1"})] == ["assigned", "in_progress", "known"]
     finally:
         httpd.shutdown(); httpd.server_close(); thread.join(timeout=2)
 
@@ -89,6 +106,8 @@ def test_release_http_generates_from_latest_valid_weekly_snapshots() -> None:
     store = server.PsiMemoryStore()
     for source_type, filename in fixtures.items():
         store.persist(server.UploadRequest("team-a", "user-a", "2026-W29", "", source_type, filename, (ROOT / "tests" / "fixtures" / filename).read_bytes()))
+    for mismatch in store.repository.rows("mismatches"):
+        mismatch["status"] = "known"
     httpd, thread = _serve(store)
     try:
         status, _, body = _post(httpd.server_address[1], {"reporting_period": "2026-W29"})

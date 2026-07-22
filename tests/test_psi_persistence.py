@@ -22,7 +22,7 @@ from psi_engine import PsiReleaseService, ReleaseConfig, ReleaseGateError, Relea
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
-def test_persistent_upload_keeps_snapshot_provenance_and_deduplicates_known_issue() -> None:
+def test_persistent_upload_keeps_snapshot_provenance() -> None:
     store = server.PsiMemoryStore()
     request = server.UploadRequest(
         team_id="team-a",
@@ -40,7 +40,7 @@ def test_persistent_upload_keeps_snapshot_provenance_and_deduplicates_known_issu
     assert first.snapshot.object_path != second.snapshot.object_path
     assert first.snapshot.checksum_sha256 == second.snapshot.checksum_sha256
     assert first.run.fingerprint == second.run.fingerprint
-    assert first.run.duplicate_policy == "known_or_resolved_suppressed"
+    assert first.run.duplicate_policy == "active_mismatches_recorded"
     assert len(store.snapshots) == 2
     assert len(store.activity) == 2
 
@@ -161,29 +161,29 @@ def test_persistence_maps_relational_entities_to_fake_repository() -> None:
     assert repository.rows("activity_logs")
 
 
-def test_known_issue_recurrence_reopens_once_and_suppresses_duplicate() -> None:
+def test_new_mismatch_has_exact_location_and_handled_fingerprint_is_suppressed() -> None:
     repository = server.PsiMemoryRepository()
     store = server.PsiMemoryStore(repository=repository)
-    workbook = Workbook()
-    workbook.active.append(["unexpected"])
-    output = io.BytesIO()
-    workbook.save(output)
-    request = server.UploadRequest(
-        team_id="team-a", actor_id="user-a", reporting_period="2026-07",
-        data_as_of="2026-07-05", source_type="product", filename="product_fixture.xlsx",
-        content=output.getvalue(),
-    )
-
-    first = store.persist(request)
-    repository.resolve_mismatches(first.run.id, "user-a")
-    second = store.persist(request)
-
+    store.persist(server.UploadRequest("team-a", "user-a", "2026-07", "2026-07-05", "product", "product_fixture.xlsx", (FIXTURES / "product_fixture.xlsx").read_bytes()))
+    request = server.UploadRequest("team-a", "user-a", "2026-07", "2026-07-05", "revenue", "so_chi_tiet_revenue_fixture.xlsx", (FIXTURES / "so_chi_tiet_revenue_fixture.xlsx").read_bytes())
+    store.persist(request)
     mismatches = repository.rows("mismatches")
     assert len(mismatches) == 1
-    assert mismatches[0]["status"] == "reopened"
-    assert mismatches[0]["known_issue_id"]
-    assert repository.rows("mismatch_history")[-1]["to_status"] == "reopened"
-    assert second.run.duplicate_policy == "known_issue_reopened"
+    mismatch = mismatches[0]
+    assert mismatch["status"] == "new"
+    assert mismatch["values_by_source"] == {"file": "so_chi_tiet_revenue_fixture.xlsx", "sheet": "Sheet", "row": 6, "code": "SKU-MISSING", "description": "Missing revenue", "issue": "Missing Product mapping"}
+    mismatch_id = str(mismatch["id"])
+    repository.transition_mismatch(mismatch_id, "assigned", "", {}, "user-a")
+    repository.transition_mismatch(mismatch_id, "in_progress", "", {}, "user-a")
+    repository.transition_mismatch(mismatch_id, "known", "verified", {"source": "test"}, "user-a")
+    workbook = load_workbook(io.BytesIO(request.content))
+    workbook.active.insert_rows(5)
+    shifted = io.BytesIO()
+    workbook.save(shifted)
+    workbook.close()
+    store.persist(server.UploadRequest("team-a", "user-a", "2026-07", "2026-07-05", "revenue", "so_chi_tiet_revenue_fixture.xlsx", shifted.getvalue()))
+    assert len(repository.rows("mismatches")) == 1
+    assert repository.rows("mismatches")[0]["status"] == "known"
 
 
 def test_invalid_calendar_and_malformed_multipart_are_controlled_4xx() -> None:

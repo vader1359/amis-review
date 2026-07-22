@@ -8,6 +8,7 @@ from email.policy import default
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import TypedDict
+from urllib.error import HTTPError
 from urllib.parse import parse_qs, urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -191,19 +192,24 @@ class H(WeeklyRoutesMixin, ReleaseRoutesMixin, BaseHTTPRequestHandler):
 
     def mismatch_action(self) -> None:
         token = self.headers.get("Authorization", "").removeprefix("Bearer ").strip()
-        actor = self._actor()
-        if actor is None:
-            self.send(401, b"unauthorized", "text/plain")
-            return
         if isinstance(self.store.repository, SupabaseRepository):
             try:
-                actor = (self.store.repository.authenticated_actor(token), actor[1])
+                actor_id = self.store.repository.authenticated_actor(token)
+                memberships = self.store.repository.lookup("team_memberships", {"profile_id": actor_id}, token)
+                if not memberships:
+                    raise UploadAuthorizationError("team membership is required")
+                actor = (actor_id, str(memberships[0]["team_id"]))
             except UploadAuthorizationError:
                 self.send(401, b"unauthorized", "text/plain")
                 return
-        if self.roles.get(token, "viewer") != "reviewer":
-            self.send(403, b"reviewer role required", "text/plain")
-            return
+        else:
+            actor = self._actor()
+            if actor is None:
+                self.send(401, b"unauthorized", "text/plain")
+                return
+            if self.roles.get(token, "viewer") != "reviewer":
+                self.send(403, b"reviewer role required", "text/plain")
+                return
         try:
             length = int(self.headers.get("Content-Length", "0"))
             payload = json.loads(self.rfile.read(length).decode("utf-8"))
@@ -213,7 +219,26 @@ class H(WeeklyRoutesMixin, ReleaseRoutesMixin, BaseHTTPRequestHandler):
             evidence = payload.get("evidence", {})
             if not isinstance(evidence, dict) or not all(isinstance(key, str) and isinstance(value, str) for key, value in evidence.items()):
                 raise ValueError
-            self.store.repository.transition_mismatch(mismatch_id, to_status, comment, evidence, actor[0], token)
+            if to_status not in {"resolved", "known", "ignored"}:
+                raise ValueError("final mismatch status is invalid")
+            rows = self.store.repository.lookup("mismatches", {"id": mismatch_id}, token)
+            if not rows:
+                raise UploadValidationError("mismatch is unavailable")
+            current = str(rows[0]["status"])
+            transitions = (to_status,) if isinstance(self.store.repository, SupabaseRepository) else {
+                "new": ("assigned", "in_progress", to_status),
+                "reopened": ("assigned", "in_progress", to_status),
+                "assigned": ("in_progress", to_status),
+                "in_progress": (to_status,),
+            }.get(current, ())
+            if not transitions:
+                raise UploadValidationError("mismatch is already handled")
+            for status in transitions:
+                final_step = status == to_status
+                self.store.repository.transition_mismatch(mismatch_id, status, comment if final_step else "", evidence if final_step else {}, actor[0], token)
+        except HTTPError as error:
+            self.send(502, ("Supabase mismatch update failed: " + str(error.code)).encode(), "text/plain")
+            return
         except (KeyError, TypeError, ValueError, UnicodeDecodeError, UploadValidationError) as error:
             self.send(400, (str(error) or "mismatch payload is invalid").encode(), "text/plain")
             return

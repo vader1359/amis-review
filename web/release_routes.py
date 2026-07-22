@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
+from http.client import HTTPException
 from datetime import datetime
 from typing import Any
+from urllib.error import HTTPError
 
 from psi_engine import PsiReleaseService, ReleaseGateError, ReleaseRequest
-from psi_engine.persistence import SupabaseRepository, UploadAuthorizationError, week_to_period
+from psi_engine.persistence import SupabaseRepository, UploadAuthorizationError, UploadValidationError, week_to_period
 
 
 def _is_month(value: str) -> bool:
@@ -33,7 +35,11 @@ class ReleaseRoutesMixin:
             except UploadAuthorizationError:
                 self.send(401, b"unauthorized", "text/plain")
                 return
-            actor = (actor_id, "")
+            memberships = self.store.repository.lookup("team_memberships", {"profile_id": actor_id}, token)
+            if not memberships:
+                self.send(403, b"team membership is required", "text/plain")
+                return
+            actor = (actor_id, str(memberships[0]["team_id"]))
         else:
             actor = self._actor()
         if actor is None:
@@ -60,5 +66,8 @@ class ReleaseRoutesMixin:
             return
         except (KeyError, TypeError, ValueError, UnicodeDecodeError) as error:
             self.send(400, json.dumps({"error": "invalid_release_request", "message": str(error)}, ensure_ascii=False).encode(), "application/json")
+            return
+        except (HTTPError, HTTPException, OSError, UploadValidationError) as error:
+            self.send(502, json.dumps({"error": "release_failed", "message": str(error)}, ensure_ascii=False).encode(), "application/json")
             return
         self.send(201, json.dumps(record.to_json(), ensure_ascii=False).encode(), "application/json")

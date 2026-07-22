@@ -4,6 +4,7 @@ import sys
 import threading
 from pathlib import Path
 
+import pytest
 from openpyxl import Workbook
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -92,7 +93,7 @@ def test_supabase_persistence_uses_authenticated_identity_staged_object_and_upse
         metadata = next(json.loads(body) for method, path, _, body in requests if method == "POST" and path == "/rest/v1/source_snapshot_metadata")
         assert metadata == {"source_snapshot_id": persisted.snapshot.id, "header_preview": ["unexpected"], "schema_gaps": [list(gap) for gap in persisted.snapshot.schema_gaps]}
         assert any(path == "/rest/v1/source_selections?on_conflict=reporting_period_id,source_type" for _, path, _, _ in requests)
-        assert any(path == "/rest/v1/mismatches" and json.loads(body)["rule_version_id"] == "rule-uuid" for _, path, _, body in requests)
+        assert not any(path == "/rest/v1/mismatches" for _, path, _, _ in requests)
     finally:
         httpd.shutdown(); httpd.server_close(); thread.join(timeout=2)
 
@@ -116,12 +117,18 @@ def test_persisted_snapshot_metadata_is_written_as_json() -> None:
     assert row["schema_gaps"] == [list(gap) for gap in persisted.snapshot.schema_gaps]
 
 
-def test_supabase_mutations_use_server_role_bearer_token() -> None:
-    headers: list[str] = []
+def test_supabase_mutations_use_server_role_but_mismatch_transition_uses_user_bearer() -> None:
+    requests: list[tuple[str, str, str, bytes]] = []
 
     class Recorder(server.BaseHTTPRequestHandler):
+        def do_GET(self) -> None:
+            requests.append((self.command, self.path, self.headers["Authorization"] or "", b""))
+            payload = b'{"id":"actor"}' if self.path == "/auth/v1/user" else b'[{"id":"mismatch","fingerprint":"fp","record_key":"SKU-1"}]'
+            self.send_response(200); self.send_header("Content-Length", str(len(payload))); self.end_headers(); self.wfile.write(payload)
+
         def do_POST(self) -> None:
-            headers.append(self.headers["Authorization"] or "")
+            content = self.rfile.read(int(self.headers.get("Content-Length", "0")))
+            requests.append((self.command, self.path, self.headers["Authorization"] or "", content))
             self.send_response(201); self.send_header("Content-Length", "0"); self.end_headers()
 
         def log_message(self, *_args: str) -> None:
@@ -130,13 +137,25 @@ def test_supabase_mutations_use_server_role_bearer_token() -> None:
     httpd = server.ThreadingHTTPServer(("127.0.0.1", 0), Recorder); thread = threading.Thread(target=httpd.serve_forever, daemon=True); thread.start()
     try:
         repository = server.SupabaseRepository(f"http://127.0.0.1:{httpd.server_address[1]}", "server-secret")
-        repository.insert("upload_batches", {"id": "batch"}, "user-token"); repository.upsert("source_selections", {"id": "selection"}, "id", "user-token"); repository.upload("team/batch/snapshot", b"xlsx", "user-token"); repository.transition_mismatch("mismatch", "reopened", "recurrence", {"recurrence": "true"}, "actor", "user-token")
-        assert headers == ["Bearer server-secret"] * 4
+        repository.insert("upload_batches", {"id": "batch"}, "user-token")
+        repository.upsert("source_selections", {"id": "selection"}, "id", "user-token")
+        repository.upload("team/batch/snapshot", b"xlsx", "user-token")
+        repository.transition_mismatch("mismatch", "known", "checked", {"source": "test"}, "actor", "user-token")
+        assert [auth for _, _, auth, _ in requests[:3]] == ["Bearer server-secret"] * 3
+        assert requests[3][:3] == ("GET", "/auth/v1/user", "Bearer user-token")
+        assert requests[4][1].startswith("/rest/v1/mismatches?id=eq.mismatch")
+        assert requests[4][2] == "Bearer server-secret"
+        assert requests[5][1] == "/rest/v1/known_issues?on_conflict=fingerprint"
+        assert requests[5][2] == "Bearer server-secret"
+        known_issue = json.loads(requests[5][3])
+        assert known_issue["fingerprint"] == "fp"
+        assert known_issue["created_by"] == "actor"
+        assert json.loads(known_issue["reason"])["action"] == "known"
     finally:
         httpd.shutdown(); httpd.server_close(); thread.join(timeout=2)
 
 
-def test_supabase_operations_use_service_role_without_user_bearer() -> None:
+def test_supabase_service_operations_work_without_user_bearer_but_transition_requires_one() -> None:
     requests: list[str] = []
 
     class Recorder(server.BaseHTTPRequestHandler):
@@ -159,16 +178,16 @@ def test_supabase_operations_use_service_role_without_user_bearer() -> None:
             lambda: repository.insert("upload_batches", {"id": "batch"}),
             lambda: repository.upsert("source_selections", {"id": "selection"}, "id"),
             lambda: repository.upload("team/batch/snapshot", b"xlsx"),
-            lambda: repository.transition_mismatch("mismatch", "reopened", "recurrence", {"recurrence": "true"}, "actor"),
         )
         for operation in operations:
             operation()
+        with pytest.raises(server.UploadAuthorizationError):
+            repository.transition_mismatch("mismatch", "reopened", "recurrence", {"recurrence": "true"}, "actor")
         assert requests == [
             "/rest/v1/profiles?id=eq.actor",
             "/rest/v1/upload_batches",
             "/rest/v1/source_selections?on_conflict=id",
             "/storage/v1/object/psi-source/team/batch/snapshot",
-            "/rest/v1/rpc/transition_mismatch",
         ]
     finally:
         httpd.shutdown(); httpd.server_close(); thread.join(timeout=2)

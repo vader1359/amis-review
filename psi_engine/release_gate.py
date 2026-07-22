@@ -43,4 +43,8 @@ def evaluate_gate(
             continue
         if age < 0 or age > max_source_age_days:
             reasons.append(ReleaseGateReason("stale_source", f"selected source is stale (age {age} days; limit {max_source_age_days})"))
+    active_statuses = {"new", "assigned", "in_progress", "reopened"}
+    active_mismatches = [row for row in mismatches if str(row.get("status")) in active_statuses]
+    if active_mismatches:
+        reasons.append(ReleaseGateReason("unresolved_mismatches", f"{len(active_mismatches)} mismatch chưa được xử lý"))
     return ReleaseGateDecision(not reasons, tuple(reasons))

@@ -146,6 +146,13 @@ class PsiReleaseService:
             periods = self.store.repository.lookup("reporting_periods", {"period_key": request.reporting_period}, auth_token)
             period_id = str(periods[0]["id"]) if periods else period_id
         mismatches = [] if "-W" in request.reporting_period else self.store.repository.lookup("mismatches", {"reporting_period_id": period_id}, auth_token)
+        if not isinstance(self.store.repository, PsiMemoryRepository):
+            suppressed = {
+                str(row.get("fingerprint"))
+                for row in self.store.repository.lookup("known_issues", {}, auth_token)
+                if str(row.get("status")) in {"known", "approved"}
+            }
+            mismatches = [row for row in mismatches if str(row.get("fingerprint")) not in suppressed]
         as_of = date.fromisoformat(week_to_period(request.reporting_period)[1]) if "-W" in request.reporting_period else self.config.as_of
         decision = evaluate_gate(snapshots, mismatches, as_of, self.config.max_source_age_days)
         return decision
@@ -185,8 +192,11 @@ class PsiReleaseService:
             storage_delete(repository, bucket, path, token)
 
     def _cleanup_attempt(self, context: dict[str, str], draft_path: str, final_path: str, draft_id: str, release_id: str, token: str) -> None:
-        self._delete("psi-release", final_path, token)
-        self._delete("psi-draft", draft_path, token)
+        for bucket, path in (("psi-release", final_path), ("psi-draft", draft_path)):
+            try:
+                self._delete(bucket, path, token)
+            except OSError:
+                pass
         repository = self.store.repository
         for table, key, value in (
             ("release_sources", "release_id", release_id),
@@ -197,7 +207,10 @@ class PsiReleaseService:
             ("reconciliation_run_sources", "reconciliation_run_id", context["reconciliation_run_id"]),
             ("reconciliation_runs", "id", context["reconciliation_run_id"]),
         ):
-            repository.delete(table, {key: value}, token)
+            try:
+                repository.delete(table, {key: value}, token)
+            except OSError:
+                pass
 
     def _context(self, request: ReleaseRequest, snapshots: list[dict[str, str | int | list[str] | dict[str, str] | None]], run_id: str, token: str) -> dict[str, str]:
         if isinstance(self.store.repository, PsiMemoryRepository):
@@ -208,7 +221,8 @@ class PsiReleaseService:
         if not period or not rules or not memberships:
             raise ReleaseGateError("release context is unavailable")
         context = {"team_id": str(memberships[0]["team_id"]), "reporting_period_id": str(period[0]["id"]), "rule_version_id": str(rules[0]["id"]), "reconciliation_run_id": run_id}
-        self.store.repository.insert("reconciliation_runs", {"id": run_id, "reporting_period_id": context["reporting_period_id"], "started_by": request.actor_id, "rule_version_id": context["rule_version_id"], "status": "completed", "completed_at": datetime.now(UTC).isoformat()}, token)
+        completed_at = datetime.now(UTC).isoformat()
+        self.store.repository.insert("reconciliation_runs", {"id": run_id, "reporting_period_id": context["reporting_period_id"], "started_by": request.actor_id, "rule_version_id": context["rule_version_id"], "status": "completed", "started_at": completed_at, "completed_at": completed_at}, token)
         for row in snapshots:
             self.store.repository.insert("reconciliation_run_sources", {"reconciliation_run_id": run_id, "source_snapshot_id": str(row["id"]), "source_type": str(row["source_type"])}, token)
         return context

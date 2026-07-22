@@ -39,6 +39,7 @@ class UploadValidationError(ValueError):
 
 class PsiRepository(Protocol):
     def insert(self, table: str, row: dict[str, str | int | list[str] | dict[str, str] | None], auth_token: str = "") -> None: ...
+    def insert_many(self, table: str, rows: list[dict[str, object]], auth_token: str = "") -> None: ...
     def upload(self, path: str, content: bytes, auth_token: str = "") -> None: ...
     def lookup(self, table: str, filters: dict[str, str], auth_token: str = "") -> list[dict[str, str | int | list[str] | dict[str, str] | None]]: ...
     def upsert(self, table: str, row: dict[str, str | int | list[str] | dict[str, str] | None], conflict: str, auth_token: str = "") -> None: ...
@@ -55,6 +56,9 @@ class PsiMemoryRepository:
 
     def insert(self, table: str, row: dict[str, str | int | list[str] | dict[str, str] | None], auth_token: str = "") -> None:
         self.data[table].append(row.copy())
+
+    def insert_many(self, table: str, rows: list[dict[str, object]], auth_token: str = "") -> None:
+        self.data[table].extend(row.copy() for row in rows)
 
     def upsert(self, table: str, row: dict[str, str | int | list[str] | dict[str, str] | None], conflict: str, auth_token: str = "") -> None:
         matches = [stored for stored in self.data[table] if str(stored.get(conflict)) == str(row.get(conflict))]
@@ -131,11 +135,15 @@ class SupabaseRepository:
         with urlopen(request, timeout=10):
             pass
 
-    def insert_activity_log(self, row: dict[str, str | int | list[str] | dict[str, str] | None], auth_token: str = "") -> None:
+    def insert_many(self, table: str, rows: list[dict[str, object]], auth_token: str = "") -> None:
         bearer = self._service_bearer()
-        request = Request(f"{self.url}/rest/v1/rpc/insert_activity_log", data=json.dumps({"p_team_id": row["team_id"], "p_actor_id": row["actor_id"], "p_action": row["action"], "p_entity_type": row["entity_type"], "p_entity_id": row["entity_id"], "p_metadata": row.get("metadata", {})}).encode(), method="POST", headers={"apikey": self.key, "Authorization": f"Bearer {bearer}", "Content-Type": "application/json"})
-        with urlopen(request, timeout=10):
-            pass
+        for offset in range(0, len(rows), 500):
+            request = Request(f"{self.url}/rest/v1/{table}", data=json.dumps(rows[offset:offset + 500]).encode(), method="POST", headers={"apikey": self.key, "Authorization": f"Bearer {bearer}", "Content-Type": "application/json", "Prefer": "return=minimal"})
+            with urlopen(request, timeout=60):
+                pass
+
+    def insert_activity_log(self, row: dict[str, str | int | list[str] | dict[str, str] | None], auth_token: str = "") -> None:
+        self.insert("activity_logs", row, auth_token)
 
     def upsert(self, table: str, row: dict[str, str | int | list[str] | dict[str, str] | None], conflict: str, auth_token: str = "") -> None:
         bearer = self._service_bearer()
@@ -206,10 +214,31 @@ class SupabaseRepository:
         return payload["signedURL"]
 
     def transition_mismatch(self, mismatch_id: str, to_status: str, comment: str, evidence: dict[str, str], actor_id: str, auth_token: str = "") -> None:
-        bearer = self._service_bearer()
-        request = Request(f"{self.url}/rest/v1/rpc/transition_mismatch", data=json.dumps({"p_mismatch_id": mismatch_id, "p_to_status": to_status, "p_comment": comment, "p_evidence": evidence}).encode(), method="POST", headers={"apikey": self.key, "Authorization": f"Bearer {bearer}", "Content-Type": "application/json"})
-        with urlopen(request, timeout=10):
-            pass
+        bearer = self._user_bearer(auth_token)
+        if to_status not in {"resolved", "known", "ignored"}:
+            raise UploadValidationError("final mismatch status is required")
+        if self.authenticated_actor(bearer) != actor_id:
+            raise UploadAuthorizationError("authenticated actor is unavailable")
+        rows = self.lookup("mismatches", {"id": mismatch_id}, auth_token)
+        if not rows:
+            raise UploadValidationError("mismatch is unavailable")
+        mismatch = rows[0]
+        fingerprint = str(mismatch.get("fingerprint", ""))
+        if not fingerprint:
+            raise UploadValidationError("mismatch fingerprint is unavailable")
+        reason = json.dumps({"action": to_status, "comment": comment, "evidence": evidence}, ensure_ascii=False, separators=(",", ":"))
+        self.upsert(
+            "known_issues",
+            {
+                "fingerprint": fingerprint,
+                "title": str(mismatch.get("record_key") or fingerprint),
+                "reason": reason,
+                "status": "approved" if to_status == "resolved" else "known",
+                "created_by": actor_id,
+            },
+            "fingerprint",
+            auth_token,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -254,16 +283,56 @@ class PsiMemoryStore:
         if source_type != request.source_type: raise UploadValidationError("filename does not match source_type")
         checksum = sha256(request.content).hexdigest(); version = request.version or sum(s.team_id == request.team_id and s.reporting_period == request.reporting_period and s.source_type == request.source_type for s in self.snapshots) + 1
         snapshot_id = str(uuid4()); batch_id = str(uuid4()); now = datetime.now(UTC).isoformat(); headers, row_count = workbook_metadata(request.content, request.source_type)
-        result = build({request.filename: request.content}); gaps = tuple(tuple(cell for cell in gap) for gap in result.gaps); snapshot = Snapshot(snapshot_id, request.team_id, request.reporting_period, request.source_type, version, request.filename, f"{request.team_id}/{batch_id}/{snapshot_id}", checksum, len(request.content), request.data_as_of, "failed" if gaps else "passed", headers, gaps, row_count, request.actor_id, now)
-        material = tuple(tuple(cell for cell in issue) for issue in result.issues + result.gaps); fingerprint = sha256((request.reporting_period + request.source_type + json_material(material)).encode()).hexdigest(); previous_matches = self.repository.lookup("mismatches", {"fingerprint": fingerprint}, auth_token); previous = previous_matches[0] if previous_matches else None; policy = "known_issue_reopened" if previous and str(previous["status"]) in {"resolved", "known", "ignored"} else "known_or_resolved_suppressed"; run = RunProvenance(str(uuid4()), request.reporting_period, (snapshot_id,), material, fingerprint, policy, "completed", request.actor_id, now); draft_id = str(uuid4())
-        self._write(snapshot, run, draft_id, request, result.issues + result.gaps, previous, auth_token); return PersistedUpload(snapshot, run, draft_id)
+        result = build(self._reconciliation_files(request, auth_token)); gaps = tuple(tuple(cell for cell in gap) for gap in result.gaps); snapshot = Snapshot(snapshot_id, request.team_id, request.reporting_period, request.source_type, version, request.filename, f"{request.team_id}/{batch_id}/{snapshot_id}", checksum, len(request.content), request.data_as_of, "failed" if gaps else "passed", headers, gaps, row_count, request.actor_id, now)
+        material = tuple(tuple(cell for cell in issue) for issue in result.issues + result.gaps); fingerprint = sha256((request.reporting_period + request.source_type + json_material(material)).encode()).hexdigest(); run = RunProvenance(str(uuid4()), request.reporting_period, (snapshot_id,), material, fingerprint, "active_mismatches_recorded", "completed", request.actor_id, now); draft_id = str(uuid4())
+        self._write(snapshot, run, draft_id, request, result.issues, auth_token); return PersistedUpload(snapshot, run, draft_id)
 
-    def _write(self, snapshot: Snapshot, run: RunProvenance, draft_id: str, request: UploadRequest, issues: list[list[str | int | float | None]], previous: dict[str, str | int | list[str] | dict[str, str] | None] | None, auth_token: str) -> None:
+    def _reconciliation_files(self, request: UploadRequest, auth_token: str) -> dict[str, bytes]:
+        files = {request.filename: request.content}
+        related = {"product": {"purchase", "revenue"}, "purchase": {"product"}, "revenue": {"product"}}.get(request.source_type, set())
+        if not related:
+            return files
+        if isinstance(self.repository, SupabaseRepository):
+            selections = self.repository.lookup("source_selections", {"reporting_period_id": request.reporting_period_id}, auth_token)
+            for selection in selections:
+                snapshots = self.repository.lookup("source_snapshots", {"id": str(selection["source_snapshot_id"])}, auth_token)
+                if not snapshots or str(snapshots[0]["source_type"]) not in related:
+                    continue
+                snapshot = snapshots[0]
+                files[str(snapshot["original_filename"])] = self.repository.download(str(snapshot["object_path"]), auth_token)
+            return files
+        latest: dict[str, Snapshot] = {}
+        for snapshot in self.snapshots:
+            if snapshot.team_id == request.team_id and snapshot.reporting_period == request.reporting_period and snapshot.source_type in related:
+                if snapshot.source_type not in latest or snapshot.version > latest[snapshot.source_type].version:
+                    latest[snapshot.source_type] = snapshot
+        for snapshot in latest.values():
+            files[snapshot.original_filename] = self.repository.download(snapshot.object_path, auth_token)
+        return files
+
+    def _write(self, snapshot: Snapshot, run: RunProvenance, draft_id: str, request: UploadRequest, issues: list[list[str | int | float | None]], auth_token: str) -> None:
         period_id = request.reporting_period_id or request.reporting_period; batch_id = snapshot.object_path.split("/")[1]
         self.repository.insert("upload_batches", {"id": batch_id, "team_id": request.team_id, "reporting_period_id": period_id, "uploaded_by": request.actor_id}, auth_token); self.repository.insert("source_snapshots", {"id": snapshot.id, "upload_batch_id": batch_id, "team_id": snapshot.team_id, "reporting_period_id": period_id, "source_type": snapshot.source_type, "version": snapshot.version, "original_filename": snapshot.original_filename, "object_path": snapshot.object_path, "checksum_sha256": snapshot.checksum_sha256, "byte_size": snapshot.byte_size, "data_as_of": snapshot.data_as_of, "schema_status": snapshot.schema_status, "row_count": snapshot.row_count, "uploaded_by": snapshot.uploaded_by}, auth_token); self.repository.insert("source_snapshot_metadata", {"source_snapshot_id": snapshot.id, "header_preview": list(snapshot.header_preview), "schema_gaps": [list(gap) for gap in snapshot.schema_gaps]}, auth_token); self.repository.upsert("source_selections", {"reporting_period_id": period_id, "source_type": request.source_type, "source_snapshot_id": snapshot.id, "selected_by": request.actor_id}, "reporting_period_id,source_type", auth_token); self.repository.insert("reconciliation_runs", {"id": run.id, "reporting_period_id": period_id, "started_by": request.actor_id, "rule_version_id": request.rule_version_id, "status": run.status, "started_at": run.started_at, "completed_at": run.started_at}, auth_token); self.repository.insert("reconciliation_run_sources", {"reconciliation_run_id": run.id, "source_snapshot_id": snapshot.id, "source_type": request.source_type}, auth_token); self.repository.insert("normalized_records", {"id": str(uuid4()), "reconciliation_run_id": run.id, "source_snapshot_id": snapshot.id, "source_type": request.source_type, "record_key": run.fingerprint, "normalized_values": {"material": json_material(run.normalized_material)}, "source_row_number": 1}, auth_token); self.repository.upload(snapshot.object_path, request.content, auth_token)
-        if issues and previous is None:
-            known_issue_id = str(uuid4()); self.repository.insert("known_issues", {"id": known_issue_id, "fingerprint": run.fingerprint, "title": "PSI reconciliation issue", "reason": "Observed during server reconciliation", "status": "known", "created_by": request.actor_id}, auth_token); self.repository.insert("mismatches", {"id": str(uuid4()), "reconciliation_run_id": run.id, "reporting_period_id": period_id, "rule_version_id": request.rule_version_id, "source_type": request.source_type, "record_key": run.fingerprint, "fingerprint": run.fingerprint, "severity": "warning", "status": "known", "values_by_source": {"material": json_material(run.normalized_material)}, "known_issue_id": known_issue_id}, auth_token)
-        elif issues and previous is not None: self.repository.transition_mismatch(str(previous["id"]), "reopened", "recurrence", {"recurrence": "true"}, request.actor_id, auth_token)
+        existing_fingerprints = {str(row.get("fingerprint")) for row in self.repository.lookup("mismatches", {"reporting_period_id": period_id}, auth_token)}
+        existing_fingerprints.update(
+            str(row.get("fingerprint"))
+            for row in self.repository.lookup("known_issues", {}, auth_token)
+            if str(row.get("status")) in {"known", "approved"}
+        )
+        mismatch_rows: list[dict[str, object]] = []
+        source_types = {"Revenue": "revenue", "Purchase/PO": "purchase"}
+        for issue in issues:
+            if len(issue) < 7:
+                continue
+            source, filename, sheet, row_number, code, description, message = issue[:7]
+            source_type = source_types.get(str(source), request.source_type)
+            identity = json.dumps({"source_type": source_type, "sheet": sheet, "record_key": code or description, "issue": message}, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+            issue_fingerprint = sha256((request.reporting_period + identity).encode()).hexdigest()
+            if issue_fingerprint in existing_fingerprints:
+                continue
+            existing_fingerprints.add(issue_fingerprint)
+            mismatch_rows.append({"id": str(uuid4()), "reconciliation_run_id": run.id, "reporting_period_id": period_id, "rule_version_id": request.rule_version_id, "source_type": source_type, "record_key": str(code or description or issue_fingerprint), "fingerprint": issue_fingerprint, "severity": "blocking", "status": "new", "values_by_source": {"file": str(filename), "sheet": str(sheet), "row": row_number, "code": str(code or ""), "description": str(description or ""), "issue": str(message)}})
+        self.repository.insert_many("mismatches", mismatch_rows, auth_token)
         self.repository.insert("psi_drafts", {"id": draft_id, "reporting_period_id": period_id, "reconciliation_run_id": run.id, "rule_version_id": request.rule_version_id, "status": "pending_review", "created_by": request.actor_id}, auth_token); self.repository.insert("draft_sources", {"draft_id": draft_id, "source_snapshot_id": snapshot.id, "source_type": request.source_type}, auth_token); activity = {"team_id": request.team_id, "actor_id": request.actor_id, "action": "psi.upload.persisted", "entity_type": "source_snapshot", "entity_id": snapshot.id, "metadata": {"run_id": run.id}}; self.repository.insert_activity_log(activity, auth_token) if isinstance(self.repository, SupabaseRepository) else self.repository.insert("activity_logs", activity, auth_token); self.snapshots.append(snapshot); self.runs.append(run); key = (request.team_id, request.reporting_period, request.source_type) if "-W" in request.reporting_period else (request.reporting_period, request.source_type); self.selections[key] = snapshot.id; self.drafts.append(draft_id); self.activity.append({"action": "psi.upload.persisted", "actor_id": request.actor_id, "team_id": request.team_id})
 
     def _authorize(self, request: UploadRequest) -> None:

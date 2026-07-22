@@ -49,6 +49,7 @@ def classify(name: str) -> str | None:
 
 def build(files: FileSet) -> PsiBuildResult:
     by: dict[str, bytes] = {}
+    source_names: dict[str, str] = {}
     gaps: list[list[Cell]] = []
     for name, payload in files.items():
         source_class = classify(name)
@@ -56,6 +57,7 @@ def build(files: FileSet) -> PsiBuildResult:
             continue
         if source_class not in by or (source_class == "purchase" and "loading" in name.lower()):
             by[source_class] = payload
+            source_names[source_class] = name
     required: Final = {
         "product": ["Mã hàng hóa", "Nguồn gốc", "Category", "Sub Category"],
         "purchase": ["SỐ PO", "NGÀY PO", "SỐ DH", "MÃ MISA", "SL", "NGÀY NHẬP KHO", "F.O.C"],
@@ -83,12 +85,12 @@ def build(files: FileSet) -> PsiBuildResult:
         for column in required["revenue"]:
             if not any(norm(column) in value for value in header):
                 gaps.append(["Revenue", column, "Không tìm thấy cột bắt buộc"])
-        for row in worksheet.iter_rows(min_row=5, values_only=True):
+        for row_number, row in enumerate(worksheet.iter_rows(min_row=5, values_only=True), start=5):
             if len(row) > 19 and (norm(row[18]) in {"5111", "5112", "5113"} or norm(row[19]) in {"5111", "5112", "5113"}) and norm(row[12]) != "KHÔNG PHẢI REVENUE":
                 revenue.append(row)
                 code = str(row[10]).strip() if row[10] else ""
-                if code and code not in product and code not in ALIAS:
-                    issues.append(["Revenue", code, row[11] or "", "Missing Product mapping"])
+                if code and "product" in by and code not in product and code not in ALIAS:
+                    issues.append(["Revenue", source_names["revenue"], worksheet.title, row_number, code, row[11] or "", "Missing Product mapping"])
     inventory: list[tuple[Cell, ...]] = []
     quantity = value = 0
     if "inventory" in by:
@@ -109,7 +111,7 @@ def build(files: FileSet) -> PsiBuildResult:
         for column in required["purchase"]:
             if not any(norm(column) in value for value in header):
                 gaps.append(["Purchase/PO", column, "Không tìm thấy cột bắt buộc"])
-        for row in worksheet.iter_rows(min_row=5, values_only=True):
+        for row_number, row in enumerate(worksheet.iter_rows(min_row=5, values_only=True), start=5):
             if not any(value not in (None, "", 0) for value in row[:79]):
                 continue
             kind = norm(row[7]); flag = norm(row[26]); code = str(row[18]).strip() if row[18] else ""; name = str(row[19]).replace("\n", " / ") if row[19] else ""
@@ -117,13 +119,13 @@ def build(files: FileSet) -> PsiBuildResult:
                 excluded_po += 1; foc += flag == "F.O.C"; purchase_excluded.append([code, name, "F.O.C" if flag else kind, row[1], row[7], row[26]]); continue
             purchase.append(row)
             if not code and name:
-                issues.append(["Purchase/PO", "", name, "Missing MISA code"])
-            elif code and code not in product and code not in {"USMUS10200", "USMUS10201"}:
-                issues.append(["Purchase/PO", code, name, "Missing Product mapping"])
+                issues.append(["Purchase/PO", source_names["purchase"], worksheet.title, row_number, "", name, "Missing MISA code"])
+            elif code and "product" in by and code not in product and code not in {"USMUS10200", "USMUS10201"}:
+                issues.append(["Purchase/PO", source_names["purchase"], worksheet.title, row_number, code, name, "Missing Product mapping"])
     workbook = Workbook(); summary_sheet = workbook.active; summary_sheet.title = "PSI Summary"; summary_sheet.append(["Metric", "Value"])
     rows = [("Product master rows", len(product)), ("Revenue lines kept", len(revenue)), ("Inventory rows kept", len(inventory)), ("Inventory quantity", quantity), ("Inventory value", value), ("Purchase rows used", len(purchase)), ("PO rows excluded", excluded_po), ("FOC rows excluded", foc), ("Mismatch issues", len(issues))]
     for row in rows: summary_sheet.append(row)
-    mismatch = workbook.create_sheet("Mismatch"); mismatch.append(["Source", "Code", "Description", "Issue"]); [mismatch.append(row) for row in issues]
+    mismatch = workbook.create_sheet("Mismatch"); mismatch.append(["Source", "File", "Sheet", "Row", "Code", "Description", "Issue"]); [mismatch.append(row) for row in issues]
     data_gaps = workbook.create_sheet("Data gaps"); data_gaps.append(["Source", "Column / information", "Action required"]); [data_gaps.append(row) for row in gaps]
     excluded_sheet = workbook.create_sheet("PO excluded"); excluded_sheet.append(["Mã MISA", "Tên hàng", "Lý do loại", "Tình trạng", "Phân loại", "F.O.C"]); [excluded_sheet.append(row) for row in purchase_excluded]
     product_sheet = workbook.create_sheet("PSI by Product"); product_sheet.append(["Mã hàng", "Tên hàng", "Brand", "Category", "Sub Category", "SL bán", "Doanh số", "SL tồn", "GT tồn"])

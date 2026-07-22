@@ -28,8 +28,18 @@ h2 { font-size:22px; line-height:1.25; }
 .check-item strong,.check-item small { overflow-wrap:anywhere; }
 .check-item small { color:var(--muted); }
 .ant-btn { min-height:44px; border-radius:6px; cursor:pointer; font:inherit; font-weight:700; padding:0 16px; text-decoration:none; }
+.ant-btn:disabled { cursor:not-allowed; opacity:.5; }
 .ant-btn-primary { display:inline-flex; align-items:center; background:#1677ff; border:1px solid #1677ff; color:#fff; }
 .result-card { margin-bottom:0; }
+.mismatch-heading { display:flex; justify-content:space-between; gap:var(--space-3); margin-top:var(--space-3); }
+.mismatch-heading span { color:var(--muted); }
+.table-scroll { overflow-x:auto; margin-top:var(--space-2); }
+.mismatch-table { width:100%; border-collapse:collapse; text-align:left; }
+.mismatch-table th,.mismatch-table td { border-bottom:1px solid var(--line); padding:10px 12px; vertical-align:top; }
+.mismatch-table th { background:#f7faf6; color:var(--muted); font-size:12px; text-transform:uppercase; }
+.mismatch-table tr.mismatch-new,.mismatch-table tr.mismatch-reopened { background:#fff4e5; }
+.mismatch-actions { display:flex; flex-wrap:wrap; gap:6px; min-width:240px; }
+.mismatch-actions .ant-btn { min-height:34px; padding:0 10px; white-space:nowrap; }
 .hidden { display:none !important; }
 @media (max-width:600px) {
   .shell { padding:var(--space-5) var(--space-3); }

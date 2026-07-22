@@ -19,6 +19,8 @@ def release_store() -> server.PsiMemoryStore:
     sources = (("product", "product_fixture.xlsx"), ("purchase", "loading_purchase_fixture.xlsx"), ("revenue", "so_chi_tiet_revenue_fixture.xlsx"), ("inventory", "tong_hop_ton_kho_inventory_fixture.xlsx"), ("preorder", "pre-order_fixture.xlsx"), ("crm", "crm_sale_fixture.xlsx"), ("target", "target_fixture.xlsx"))
     for source_type, filename in sources:
         store.persist(server.UploadRequest("team-a", "user-a", "2026-07", "2026-07-05", source_type, filename, (FIXTURES / filename).read_bytes()))
+    for mismatch in store.repository.rows("mismatches"):
+        mismatch["status"] = "known"
     return store
 
 
@@ -56,30 +58,32 @@ def test_release_gate_rejects_corrupt_generated_workbook_before_writes(monkeypat
 
 
 @pytest.mark.parametrize(
-    ("severity", "status"),
+    ("severity", "status", "allowed"),
     [
-        ("blocking", "new"),
-        ("blocking", "assigned"),
-        ("warning", "in_progress"),
-        ("info", "reopened"),
-        ("blocking", "resolved"),
+        ("blocking", "new", False),
+        ("blocking", "assigned", False),
+        ("warning", "in_progress", False),
+        ("informational", "reopened", False),
+        ("blocking", "resolved", True),
+        ("warning", "known", True),
+        ("warning", "ignored", True),
     ],
 )
-def test_release_gate_reports_mismatches_without_blocking_generation(severity: str, status: str) -> None:
+def test_release_gate_blocks_only_unhandled_mismatches(severity: str, status: str, allowed: bool) -> None:
     snapshots = [{"source_type": source, "schema_status": "passed", "data_as_of": "2026-07-05"} for source in REQUIRED_SOURCES]
     decision = evaluate_gate(snapshots, [{"severity": severity, "status": status}], date(2026, 7, 5), 30)
-    assert decision.allowed
-    assert not decision.reasons
+    assert decision.allowed is allowed
+    assert (not decision.reasons) is allowed
 
 
-def test_release_generates_final_when_reconciliation_has_new_mismatch() -> None:
+def test_release_refuses_final_when_reconciliation_has_new_mismatch() -> None:
     store = release_store()
     store.repository.insert(
         "mismatches",
         {"reporting_period_id": "2026-07", "severity": "blocking", "status": "new"},
     )
-    record = PsiReleaseService(store).generate(ReleaseRequest("2026-07", "user-a"))
-    assert record.status == "published"
+    with pytest.raises(ReleaseGateError, match="mismatch chưa được xử lý"):
+        PsiReleaseService(store).generate(ReleaseRequest("2026-07", "user-a"))
 
 
 @pytest.mark.parametrize("failed_table", ["psi_drafts", "draft_sources", "psi_releases", "release_sources", "activity_logs"])

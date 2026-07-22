@@ -68,6 +68,8 @@ def test_local_preview_upload_release_download_is_authorized_and_immutable() -> 
         assert _upload(port, viewer, "product", "product_fixture.xlsx") == 201
         assert _upload(port, admin, "product", "product_fixture.xlsx") == 201
         assert all(_upload(port, contributor, source_type, filename) == 201 for source_type, filename in FIXTURES.items())
+        for mismatch in store.repository.rows("mismatches"):
+            mismatch["status"] = "known"
         status, first = _release(port, admin); assert status == 201 and isinstance(first["signed_url"], str)
         connection = HTTPConnection("127.0.0.1", port); connection.request("GET", str(first["signed_url"]), headers={"Authorization": f"Bearer {admin}"}); response = connection.getresponse(); content = response.read(); connection.close()
         assert response.status == 200

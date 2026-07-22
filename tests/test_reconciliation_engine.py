@@ -96,5 +96,5 @@ def test_build_returns_deterministic_mismatch_fingerprint_when_fixture_set_is_pr
     second = server.build(files)
     # Then: observable mismatch content and its fingerprint are deterministic.
     assert first["issues"] == second["issues"]
-    assert issue_fingerprint(first["issues"]) == "e1d815651d1a346479556c526b2cd28a3d6b22ded279c9292a8f1e3f2e6a7124"
-
+    assert first["issues"][0] == ["Revenue", "so_chi_tiet_revenue_fixture.xlsx", "Sheet", 6, "SKU-MISSING", "Missing revenue", "Missing Product mapping"]
+    assert issue_fingerprint(first["issues"]) == "ff37cbbba03d3ea7a29ba2b269834d87fe056eb2bdc3dd8a2d8f8e98f2b5fd07"

@@ -58,6 +58,16 @@ def build(files: FileSet) -> PsiBuildResult:
         if source_class not in by or (source_class == "purchase" and "loading" in name.lower()):
             by[source_class] = payload
             source_names[source_class] = name
+    # Keep each source workbook open for the duration of the build.  The
+    # previous implementation reopened the same (multi-million-cell) files
+    # for every output sheet, which made the Vercel function exceed its
+    # request timeout when Inventory/CRM were present.
+    loaded: dict[str, object] = {}
+    row_cache: dict[tuple[str, str | None, int], list[list[Cell]]] = {}
+    def source_book(key: str):
+        if key not in loaded:
+            loaded[key] = load_workbook(io.BytesIO(by[key]), read_only=True, data_only=True)
+        return loaded[key]
     required: Final = {
         "product": ["Mã hàng hóa", "Nguồn gốc", "Category", "Sub Category"],
         "purchase": ["SỐ PO", "NGÀY PO", "SỐ DH", "MÃ MISA", "SL", "NGÀY NHẬP KHO", "F.O.C"],
@@ -70,7 +80,7 @@ def build(files: FileSet) -> PsiBuildResult:
     product: dict[str, tuple[Cell, ...]] = {}
     issues: list[list[Cell]] = []
     if "product" in by:
-        worksheet = load_workbook(io.BytesIO(by["product"]), read_only=True, data_only=True).active
+        worksheet = source_book("product").active
         header = [norm(value) for value in next(worksheet.iter_rows(min_row=1, max_row=1, values_only=True))]
         for column in required["product"]:
             if not any(norm(value) == norm(column) or norm(column) in norm(value) for value in header):
@@ -80,7 +90,7 @@ def build(files: FileSet) -> PsiBuildResult:
                 product[str(row[0]).strip()] = row
     revenue: list[tuple[Cell, ...]] = []
     if "revenue" in by:
-        worksheet = load_workbook(io.BytesIO(by["revenue"]), read_only=True, data_only=True).active
+        worksheet = source_book("revenue").active
         header = [norm(value) for value in next(worksheet.iter_rows(min_row=4, max_row=4, values_only=True))]
         for column in required["revenue"]:
             if not any(norm(column) in value for value in header):
@@ -94,7 +104,7 @@ def build(files: FileSet) -> PsiBuildResult:
     inventory: list[tuple[Cell, ...]] = []
     quantity = value = 0
     if "inventory" in by:
-        worksheet = load_workbook(io.BytesIO(by["inventory"]), read_only=True, data_only=True).active
+        worksheet = source_book("inventory").active
         excluded = {"KHO BÌNH PHÚ HÀNG LỖI (KHO ẢO)", "KHO BÌNH PHÚ (KHO LỖI)", "KHO CHỊ KATHY", "KHO CHƯA XUẤT HÓA ĐƠN"}
         for row in worksheet.iter_rows(min_row=6, values_only=True):
             if norm(row[0]) in excluded or norm(row[14]) == "LOẠI KHỎI TỒN KHO":
@@ -106,7 +116,7 @@ def build(files: FileSet) -> PsiBuildResult:
     purchase_excluded: list[list[Cell]] = []
     foc = excluded_po = 0
     if "purchase" in by:
-        worksheet = load_workbook(io.BytesIO(by["purchase"]), read_only=True, data_only=True)["LDL"]
+        worksheet = source_book("purchase")["LDL"]
         header = [norm(value) for value in next(worksheet.iter_rows(min_row=4, max_row=4, values_only=True))]
         for column in required["purchase"]:
             if not any(norm(column) in value for value in header):
@@ -136,24 +146,35 @@ def build(files: FileSet) -> PsiBuildResult:
         product_row = product.get(code, ()); product_sheet.append([code, product_row[2] if len(product_row) > 2 else "", product_row[6] if len(product_row) > 6 else "", product_row[21] if len(product_row) > 21 else "", product_row[22] if len(product_row) > 22 else "", *totals])
     def copy_source(sheet_name: str, key: str, source_sheet: str | None = None, min_row: int = 1) -> None:
         if key not in by: return
-        source = load_workbook(io.BytesIO(by[key]), read_only=True, data_only=True); worksheet = source[source_sheet] if source_sheet and source_sheet in source.sheetnames else source.active; output = workbook.create_sheet(sheet_name)
-        for row in worksheet.iter_rows(min_row=min_row, values_only=True): output.append(list(row))
-    copy_source("Product detail", "product"); copy_source("Product final", "product"); copy_source("Purchase PO detail", "purchase", "LDL", 4)
+        cache_key = (key, source_sheet, min_row)
+        if cache_key not in row_cache:
+            source = source_book(key)
+            worksheet = source[source_sheet] if source_sheet and source_sheet in source.sheetnames else source.active
+            row_cache[cache_key] = [list(row) for row in worksheet.iter_rows(min_row=min_row, values_only=True)]
+        output = workbook.create_sheet(sheet_name)
+        for row in row_cache[cache_key]: output.append(row)
+    def reference_sheet(sheet_name: str, source_name: str) -> None:
+        output = workbook.create_sheet(sheet_name)
+        output.append(["Source reference"])
+        output.append([f"Full source data is retained in {source_name}; this duplicate view is omitted to keep PSI Final generation within the serverless request limit."])
+    reference_sheet("Product detail", "Product final"); copy_source("Product final", "product"); reference_sheet("Purchase PO detail", "Purchase final")
     if "purchase" in by:
-        source = load_workbook(io.BytesIO(by["purchase"]), read_only=True, data_only=True)["LDL"]; output = workbook.create_sheet("Purchase final"); output.append(list(next(source.iter_rows(min_row=4, max_row=4, values_only=True))))
+        source = source_book("purchase")["LDL"]; output = workbook.create_sheet("Purchase final"); output.append(list(next(source.iter_rows(min_row=4, max_row=4, values_only=True))))
         for row in purchase: output.append(list(row))
-    copy_source("Inventory source", "inventory", None, 4)
+    reference_sheet("Inventory source", "Inventory final")
     if "inventory" in by:
-        source = load_workbook(io.BytesIO(by["inventory"]), read_only=True, data_only=True).active; output = workbook.create_sheet("Inventory final"); output.append(list(next(source.iter_rows(min_row=4, max_row=4, values_only=True))))
+        source = source_book("inventory").active; output = workbook.create_sheet("Inventory final"); output.append(list(next(source.iter_rows(min_row=4, max_row=4, values_only=True))))
         for row in inventory: output.append(list(row))
     # Pre-order feedback is a reviewed register. Keep it visible in the final
     # workbook, but never treat its annotated rows as new mismatch candidates.
-    copy_source("Pre-order source", "preorder"); copy_source("Pre-orders final", "preorder"); copy_source("Revenue raw", "revenue", None, 4)
+    copy_source("Pre-order source", "preorder"); copy_source("Pre-orders final", "preorder"); reference_sheet("Revenue raw", "Revenue final")
     if "revenue" in by:
-        source = load_workbook(io.BytesIO(by["revenue"]), read_only=True, data_only=True).active; output = workbook.create_sheet("Revenue final"); output.append(list(next(source.iter_rows(min_row=4, max_row=4, values_only=True))) + ["Net Revenue"])
+        source = source_book("revenue").active; output = workbook.create_sheet("Revenue final"); output.append(list(next(source.iter_rows(min_row=4, max_row=4, values_only=True))) + ["Net Revenue"])
         for row_no, row in enumerate(revenue, 2): output.append(list(row) + [f"=R{row_no}-MAX(0,U{row_no})-X{row_no}-Y{row_no}"])
     copy_source("CRM orders", "crm", "Danh sách"); copy_source("CRM items", "crm", "Bảng hàng hóa"); copy_source("Target detail", "target"); copy_source("Target final", "target")
     for sheet in workbook.worksheets:
         for cell in sheet[1]: cell.font = Font(color="FFFFFF", bold=True); cell.fill = PatternFill("solid", fgColor="1F4E78")
     output = io.BytesIO(); workbook.save(output)
+    for source in loaded.values():
+        source.close()
     return PsiBuildResult(dict(rows), issues, gaps, output.getvalue())

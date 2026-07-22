@@ -37,7 +37,7 @@ def classify(name: str) -> str | None:
         "product": ["product"],
         "purchase": ["loading", "purchase", "po"],
         "revenue": ["so_chi_tiet", "revenue"],
-        "inventory": ["tong_hop_ton_kho", "inventory"],
+        "inventory": ["tong_hop_ton_kho", "tong hop ton kho", "inventory"],
         "preorder": ["pre order", "pre-order", "preorder"],
         "crm": ["crm_sale", "crm"],
         "target": ["target"],

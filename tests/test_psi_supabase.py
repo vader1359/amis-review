@@ -38,11 +38,11 @@ def test_supabase_transport_maps_uuid_lookups_and_storage() -> None:
         repository.upload("team-uuid/2026-07/product/v1-file.xlsx", b"xlsx", "user-token")
         repository.insert("source_snapshots", {"id": "snapshot-uuid", "team_id": "team-uuid", "reporting_period_id": "period-uuid"}, "user-token")
         assert requests[0][1] == "/rest/v1/reporting_periods?period_key=eq.2026-07"
-        assert requests[0][2] == "Bearer user-token"
+        assert requests[0][2] == "Bearer test-only-secret"
         assert requests[1][1] == "/storage/v1/object/psi-source/team-uuid/2026-07/product/v1-file.xlsx"
-        assert requests[1][2] == "Bearer user-token"
+        assert requests[1][2] == "Bearer test-only-secret"
         assert json.loads(requests[2][3])["reporting_period_id"] == "period-uuid"
-        assert requests[2][2] == "Bearer user-token"
+        assert requests[2][2] == "Bearer test-only-secret"
     finally:
         httpd.shutdown(); httpd.server_close(); thread.join(timeout=2)
 
@@ -81,7 +81,10 @@ def test_supabase_persistence_uses_authenticated_identity_staged_object_and_upse
         request = server.UploadRequest("team-uuid", "actor-uuid", "2026-07", "2026-07-05", "product", "product_fixture.xlsx", content.getvalue())
         persisted = store.persist(request, auth_token="bearer-token")
         paths = [path for _, path, _, _ in requests]
-        assert all(auth == "Bearer bearer-token" for method, _, auth, _ in requests)
+        auth_requests = [auth for _, path, auth, _ in requests if path.startswith("/auth/v1/user")]
+        persistence_requests = [auth for _, path, auth, _ in requests if not path.startswith("/auth/v1/user")]
+        assert auth_requests == ["Bearer bearer-token"]
+        assert all(auth == "Bearer test-only-secret" for auth in persistence_requests)
         snapshot = next(json.loads(body) for method, path, _, body in requests if method == "POST" and path == "/rest/v1/source_snapshots")
         assert paths.index("/rest/v1/upload_batches") < paths.index("/rest/v1/source_snapshots") < paths.index("/storage/v1/object/psi-source/team-uuid/" + snapshot["upload_batch_id"] + "/" + persisted.snapshot.id)
         assert "/auth/v1/user" in paths
@@ -113,7 +116,7 @@ def test_persisted_snapshot_metadata_is_written_as_json() -> None:
     assert row["schema_gaps"] == [list(gap) for gap in persisted.snapshot.schema_gaps]
 
 
-def test_supabase_mutations_use_authenticated_bearer_token() -> None:
+def test_supabase_mutations_use_server_role_bearer_token() -> None:
     headers: list[str] = []
 
     class Recorder(server.BaseHTTPRequestHandler):
@@ -128,12 +131,12 @@ def test_supabase_mutations_use_authenticated_bearer_token() -> None:
     try:
         repository = server.SupabaseRepository(f"http://127.0.0.1:{httpd.server_address[1]}", "server-secret")
         repository.insert("upload_batches", {"id": "batch"}, "user-token"); repository.upsert("source_selections", {"id": "selection"}, "id", "user-token"); repository.upload("team/batch/snapshot", b"xlsx", "user-token"); repository.transition_mismatch("mismatch", "reopened", "recurrence", {"recurrence": "true"}, "actor", "user-token")
-        assert headers == ["Bearer user-token"] * 4
+        assert headers == ["Bearer server-secret"] * 4
     finally:
         httpd.shutdown(); httpd.server_close(); thread.join(timeout=2)
 
 
-def test_supabase_operations_reject_empty_bearer_before_transport() -> None:
+def test_supabase_operations_use_service_role_without_user_bearer() -> None:
     requests: list[str] = []
 
     class Recorder(server.BaseHTTPRequestHandler):
@@ -159,13 +162,14 @@ def test_supabase_operations_reject_empty_bearer_before_transport() -> None:
             lambda: repository.transition_mismatch("mismatch", "reopened", "recurrence", {"recurrence": "true"}, "actor"),
         )
         for operation in operations:
-            try:
-                operation()
-            except server.UploadAuthorizationError:
-                pass
-            else:
-                raise AssertionError("empty bearer was accepted")
-        assert requests == []
+            operation()
+        assert requests == [
+            "/rest/v1/profiles?id=eq.actor",
+            "/rest/v1/upload_batches",
+            "/rest/v1/source_selections?on_conflict=id",
+            "/storage/v1/object/psi-source/team/batch/snapshot",
+            "/rest/v1/rpc/transition_mismatch",
+        ]
     finally:
         httpd.shutdown(); httpd.server_close(); thread.join(timeout=2)
 

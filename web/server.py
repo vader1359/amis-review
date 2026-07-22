@@ -50,9 +50,9 @@ def build(files: dict[str, bytes]) -> BuildPayload:
 
 def build_store() -> PsiMemoryStore:
     url = os.environ.get("SUPABASE_URL", "")
-    key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "")
+    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
     if bool(url) != bool(key):
-        raise UploadValidationError("Supabase browser configuration is incomplete")
+        raise UploadValidationError("Supabase server configuration is incomplete")
     return PsiMemoryStore(SupabaseRepository(url, key)) if url and key else PsiMemoryStore()
 
 

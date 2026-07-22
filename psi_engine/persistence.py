@@ -116,33 +116,36 @@ class SupabaseRepository:
     def from_environment(cls) -> "SupabaseRepository":
         return cls(os.environ.get("SUPABASE_URL", ""), os.environ.get("SUPABASE_SERVICE_ROLE_KEY", ""))
 
-    def _bearer(self, auth_token: str) -> str:
+    def _user_bearer(self, auth_token: str) -> str:
         bearer = auth_token.strip()
         if not bearer:
             raise UploadAuthorizationError("authenticated bearer is required")
         return bearer
 
+    def _service_bearer(self) -> str:
+        return self.key
+
     def insert(self, table: str, row: dict[str, str | int | list[str] | dict[str, str] | None], auth_token: str = "") -> None:
-        bearer = self._bearer(auth_token)
+        bearer = self._service_bearer()
         request = Request(f"{self.url}/rest/v1/{table}", data=json.dumps(row).encode(), method="POST", headers={"apikey": self.key, "Authorization": f"Bearer {bearer}", "Content-Type": "application/json", "Prefer": "return=minimal"})
         with urlopen(request, timeout=10):
             pass
 
     def insert_activity_log(self, row: dict[str, str | int | list[str] | dict[str, str] | None], auth_token: str = "") -> None:
-        bearer = self._bearer(auth_token)
+        bearer = self._service_bearer()
         request = Request(f"{self.url}/rest/v1/rpc/insert_activity_log", data=json.dumps({"p_team_id": row["team_id"], "p_actor_id": row["actor_id"], "p_action": row["action"], "p_entity_type": row["entity_type"], "p_entity_id": row["entity_id"], "p_metadata": row.get("metadata", {})}).encode(), method="POST", headers={"apikey": self.key, "Authorization": f"Bearer {bearer}", "Content-Type": "application/json"})
         with urlopen(request, timeout=10):
             pass
 
     def upsert(self, table: str, row: dict[str, str | int | list[str] | dict[str, str] | None], conflict: str, auth_token: str = "") -> None:
-        bearer = self._bearer(auth_token)
+        bearer = self._service_bearer()
         request = Request(f"{self.url}/rest/v1/{table}?on_conflict={conflict}", data=json.dumps(row).encode(), method="POST", headers={"apikey": self.key, "Authorization": f"Bearer {bearer}", "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal"})
         with urlopen(request, timeout=10):
             pass
 
     def lookup(self, table: str, filters: dict[str, str], auth_token: str = "") -> list[dict[str, str | int | list[str] | dict[str, str] | None]]:
         query = urlencode({key: f"eq.{value}" for key, value in filters.items()})
-        bearer = self._bearer(auth_token)
+        bearer = self._service_bearer()
         request = Request(f"{self.url}/rest/v1/{table}?{query}", method="GET", headers={"apikey": self.key, "Authorization": f"Bearer {bearer}"})
         with urlopen(request, timeout=10) as response:
             payload = json.loads(response.read().decode("utf-8"))
@@ -152,13 +155,13 @@ class SupabaseRepository:
 
     def delete(self, table: str, filters: dict[str, str], auth_token: str = "") -> None:
         query = urlencode({key: f"eq.{value}" for key, value in filters.items()})
-        bearer = self._bearer(auth_token)
+        bearer = self._service_bearer()
         request = Request(f"{self.url}/rest/v1/{table}?{query}", method="DELETE", headers={"apikey": self.key, "Authorization": f"Bearer {bearer}"})
         with urlopen(request, timeout=10):
             pass
 
     def authenticated_actor(self, auth_token: str) -> str:
-        bearer = self._bearer(auth_token)
+        bearer = self._user_bearer(auth_token)
         request = Request(f"{self.url}/auth/v1/user", method="GET", headers={"apikey": self.key, "Authorization": f"Bearer {bearer}"})
         with urlopen(request, timeout=10) as response:
             payload = json.loads(response.read().decode("utf-8"))
@@ -182,19 +185,19 @@ class SupabaseRepository:
         return {"reporting_period_id": period_id, "rule_version_id": rule_id, "version": str(len(snapshots) + 1)}
 
     def upload(self, path: str, content: bytes, auth_token: str = "") -> None:
-        bearer = self._bearer(auth_token)
+        bearer = self._service_bearer()
         request = Request(f"{self.url}/storage/v1/object/{self.bucket}/{path}", data=content, method="POST", headers={"apikey": self.key, "Authorization": f"Bearer {bearer}", "Content-Type": ALLOWED_CONTENT_TYPE})
         with urlopen(request, timeout=10):
             pass
 
     def download(self, path: str, auth_token: str = "") -> bytes:
-        bearer = self._bearer(auth_token)
+        bearer = self._service_bearer()
         request = Request(f"{self.url}/storage/v1/object/{self.bucket}/{path}", method="GET", headers={"apikey": self.key, "Authorization": f"Bearer {bearer}"})
         with urlopen(request, timeout=10) as response:
             return response.read()
 
     def signed_download(self, path: str, expires: int, auth_token: str = "") -> str:
-        bearer = self._bearer(auth_token)
+        bearer = self._service_bearer()
         request = Request(f"{self.url}/storage/v1/object/sign/{self.bucket}/{path}", data=json.dumps({"expiresIn": expires}).encode(), method="POST", headers={"apikey": self.key, "Authorization": f"Bearer {bearer}", "Content-Type": "application/json"})
         with urlopen(request, timeout=10) as response:
             payload = json.loads(response.read().decode("utf-8"))
@@ -203,7 +206,7 @@ class SupabaseRepository:
         return payload["signedURL"]
 
     def transition_mismatch(self, mismatch_id: str, to_status: str, comment: str, evidence: dict[str, str], actor_id: str, auth_token: str = "") -> None:
-        bearer = self._bearer(auth_token)
+        bearer = self._service_bearer()
         request = Request(f"{self.url}/rest/v1/rpc/transition_mismatch", data=json.dumps({"p_mismatch_id": mismatch_id, "p_to_status": to_status, "p_comment": comment, "p_evidence": evidence}).encode(), method="POST", headers={"apikey": self.key, "Authorization": f"Bearer {bearer}", "Content-Type": "application/json"})
         with urlopen(request, timeout=10):
             pass

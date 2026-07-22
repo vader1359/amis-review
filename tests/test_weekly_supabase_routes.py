@@ -1,7 +1,9 @@
 import sys
 import threading
 from http.client import HTTPConnection
+from io import BytesIO
 from pathlib import Path
+from urllib.error import HTTPError
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "web"))
@@ -44,6 +46,40 @@ def test_supabase_upload_uses_bearer_identity_without_local_role_cache(monkeypat
         # Then: Supabase identity is forwarded without local actor/role lookup.
         assert response.status == 201
         assert observed == {"actor": "actor-from-bearer", "token": "external-session"}
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+        thread.join(timeout=2)
+
+
+def test_supabase_upload_returns_controlled_error_when_server_role_is_denied(monkeypatch) -> None:
+    # Given: an authenticated Supabase caller whose server-side persistence is denied upstream.
+    repository = server.SupabaseRepository("https://psi.example.test", "service-role-key")
+    store = server.PsiMemoryStore(repository)
+    monkeypatch.setattr(repository, "authenticated_actor", lambda token: "actor-from-bearer")
+
+    def persist(_request: server.UploadRequest, auth_token: str) -> _Persisted:
+        raise HTTPError("https://psi.example.test/rest/v1/profiles", 403, "Forbidden", {}, BytesIO(b'{"message":"permission denied"}'))
+
+    monkeypatch.setattr(store, "persist", persist)
+    server.H.store = store
+    server.H.actors = {}
+    server.H.roles = {}
+    httpd = server.ThreadingHTTPServer(("127.0.0.1", 0), server.H)
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+    body = b"--psi\r\nContent-Disposition: form-data; name=\"team_id\"\r\n\r\nteam-a\r\n--psi\r\nContent-Disposition: form-data; name=\"week\"\r\n\r\n2026-W29\r\n--psi\r\nContent-Disposition: form-data; name=\"source_type\"\r\n\r\nproduct\r\n--psi\r\nContent-Disposition: form-data; name=\"file\"; filename=\"product_fixture.xlsx\"\r\nContent-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\r\n\r\nfixture\r\n--psi--\r\n"
+    try:
+        # When: upstream persistence rejects the upload.
+        connection = HTTPConnection("127.0.0.1", httpd.server_address[1])
+        connection.request("POST", "/api/weekly-upload", body=body, headers={"Authorization": "Bearer external-session", "Content-Type": "multipart/form-data; boundary=psi", "Content-Length": str(len(body))})
+        response = connection.getresponse()
+        payload = response.read()
+        connection.close()
+
+        # Then: the browser receives an authorization response instead of a dropped connection.
+        assert response.status == 403
+        assert payload == b"Supabase persistence is not authorized"
     finally:
         httpd.shutdown()
         httpd.server_close()

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from email.parser import BytesParser
+from urllib.error import HTTPError
 from email.policy import default
 from urllib.parse import parse_qs, urlsplit
 
@@ -81,6 +82,12 @@ class WeeklyRoutesMixin:
             return
         except UploadAuthorizationError as error:
             self.send(403, str(error).encode(), "text/plain")
+            return
+        except HTTPError as error:
+            if error.code in (401, 403):
+                self.send(403, b"Supabase persistence is not authorized", "text/plain")
+            else:
+                self.send(502, b"Supabase persistence request failed", "text/plain")
             return
         except UploadValidationError as error:
             self.send(400, str(error).encode(), "text/plain")

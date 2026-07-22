@@ -146,7 +146,7 @@ def test_dashboard_preserves_terminal_mismatch_history() -> None:
         httpd.shutdown(); httpd.server_close(); thread.join(timeout=2)
 
 
-def test_build_store_uses_publishable_key_for_bearer_routed_requests(monkeypatch) -> None:
+def test_build_store_uses_service_role_key_for_server_persistence(monkeypatch) -> None:
     # Given: complete Supabase configuration with distinct server and browser keys.
     monkeypatch.setenv("SUPABASE_URL", "https://psi.example.test")
     monkeypatch.setenv("SUPABASE_PUBLISHABLE_KEY", "publishable-test-key")
@@ -155,9 +155,9 @@ def test_build_store_uses_publishable_key_for_bearer_routed_requests(monkeypatch
     # When: the application repository is built.
     store = server.build_store()
 
-    # Then: request routing starts from the publishable key and the caller bearer controls RLS.
+    # Then: server persistence uses its privileged key rather than the browser key.
     assert isinstance(store.repository, server.SupabaseRepository)
-    assert store.repository.key == "publishable-test-key"
+    assert store.repository.key == "service-role-secret"
 
 
 def test_public_config_exposes_only_supabase_browser_settings(monkeypatch) -> None:

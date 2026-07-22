@@ -82,7 +82,7 @@ class H(WeeklyRoutesMixin, ReleaseRoutesMixin, BaseHTTPRequestHandler):
         if request_path == "/api/dashboard":
             self.dashboard()
             return
-        if request_path == "/api/weekly-status":
+        if request_path in {"/api/weekly-status", "/api/weekly_status"}:
             self.weekly_status()
             return
         if request_path.startswith("/api/download/"):
@@ -129,19 +129,23 @@ class H(WeeklyRoutesMixin, ReleaseRoutesMixin, BaseHTTPRequestHandler):
         self.send(200, json.dumps({"token": token, "role": role}).encode(), "application/json")
 
     def do_POST(self) -> None:
-        if self.path == "/api/select":
+        request_path = urlsplit(self.path).path
+        if request_path == "/api/select":
             self.select_snapshot()
             return
-        if self.path == "/api/release":
+        if request_path == "/api/release":
             self.release()
             return
-        if self.path == "/api/persist":
+        if request_path == "/api/persist":
             self.persist_upload()
             return
-        if self.path == "/api/weekly-upload":
+        if request_path == "/api/weekly-upload":
             self.persist_upload()
             return
-        if self.path == "/api/mismatch":
+        if request_path == "/api/weekly_upload_staged":
+            self.persist_staged_upload()
+            return
+        if request_path == "/api/mismatch":
             self.mismatch_action()
             return
         body = self.rfile.read(int(self.headers.get("Content-Length", "0")))

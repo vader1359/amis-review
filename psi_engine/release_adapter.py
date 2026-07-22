@@ -27,8 +27,17 @@ def storage_delete(repository: ReleaseStorage, bucket: str, path: str, token: st
     bearer = repository.key
     if not bearer:
         raise UploadAuthorizationError("authenticated bearer is required")
-    object_path = quote(f"{bucket}/{path}", safe="/")
-    request = Request(f"{repository.url}/storage/v1/object/{object_path}", method="DELETE", headers={"apikey": repository.key, "Authorization": f"Bearer {bearer}"})
+    bucket_path = quote(bucket, safe="")
+    request = Request(
+        f"{repository.url}/storage/v1/object/{bucket_path}",
+        data=json.dumps({"prefixes": [path]}).encode(),
+        method="DELETE",
+        headers={
+            "apikey": repository.key,
+            "Authorization": f"Bearer {bearer}",
+            "Content-Type": "application/json",
+        },
+    )
     with urlopen(request, timeout=10):
         pass
 

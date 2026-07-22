@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import json
 from email.parser import BytesParser
+from pathlib import PurePosixPath
 from urllib.error import HTTPError
 from email.policy import default
 from urllib.parse import parse_qs, urlsplit
+from uuid import UUID
 
 from psi_engine.release import ReleaseRequest
-from psi_engine.release_adapter import storage_signed_download
+from psi_engine.release_adapter import storage_delete, storage_download, storage_signed_download
 from psi_engine.persistence import (
+    ALLOWED_CONTENT_TYPE,
     PsiMemoryRepository,
     REQUIRED_SOURCES,
     SupabaseRepository,
@@ -169,6 +172,93 @@ class WeeklyRoutesMixin:
         except UploadValidationError as error:
             self.send(400, str(error).encode(), "text/plain")
             return
+        self.send(201, json.dumps(persisted.to_json(), ensure_ascii=False).encode(), "application/json")
+
+    def persist_staged_upload(self) -> None:
+        token = self.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+        repository = self.store.repository
+        if not isinstance(repository, SupabaseRepository):
+            self.send(400, b"staged upload requires Supabase storage", "text/plain")
+            return
+
+        cleanup_path = ""
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            if length < 2 or length > 64 * 1024:
+                raise UploadValidationError("upload metadata size is invalid")
+            payload = json.loads(self.rfile.read(length).decode("utf-8"))
+            if not isinstance(payload, dict):
+                raise UploadValidationError("upload metadata is invalid")
+
+            actor_id = repository.authenticated_actor(token)
+            team_id = str(payload["team_id"])
+            memberships = repository.lookup(
+                "team_memberships", {"profile_id": actor_id, "team_id": team_id}, token
+            )
+            if not memberships:
+                self.send(403, b"team membership is required", "text/plain")
+                return
+
+            staging_path = str(payload["staging_path"])
+            parsed_path = PurePosixPath(staging_path)
+            parts = parsed_path.parts
+            if (
+                staging_path != parsed_path.as_posix()
+                or len(parts) != 3
+                or parts[0] != team_id
+                or parts[1] != "staging"
+                or parsed_path.suffix.lower() != ".xlsx"
+            ):
+                raise UploadValidationError("staging_path is invalid")
+            try:
+                UUID(parsed_path.stem)
+            except ValueError as error:
+                raise UploadValidationError("staging_path is invalid") from error
+
+            filename = str(payload["filename"])
+            if PurePosixPath(filename).name != filename or not filename.lower().endswith(".xlsx"):
+                raise UploadValidationError("filename must be a safe XLSX path component")
+            week = str(payload["week"])
+            data_as_of = str(payload["data_as_of"])
+            source_type = str(payload["source_type"])
+
+            cleanup_path = staging_path
+            content = storage_download(repository, "psi-source", staging_path, token)
+            persisted = self.store.persist(
+                UploadRequest(
+                    team_id=team_id,
+                    actor_id=actor_id,
+                    reporting_period=week,
+                    data_as_of=data_as_of,
+                    source_type=source_type,
+                    filename=filename,
+                    content=content,
+                    content_type=ALLOWED_CONTENT_TYPE,
+                ),
+                auth_token=token,
+            )
+        except KeyError:
+            self.send(400, b"required metadata is missing", "text/plain")
+            return
+        except UploadAuthorizationError as error:
+            self.send(401, str(error).encode(), "text/plain")
+            return
+        except HTTPError as error:
+            if error.code in (401, 403):
+                self.send(403, b"Supabase persistence is not authorized", "text/plain")
+            else:
+                self.send(502, b"Supabase staged upload request failed", "text/plain")
+            return
+        except (TypeError, ValueError, UnicodeDecodeError, UploadValidationError) as error:
+            self.send(400, (str(error) or "upload metadata is invalid").encode(), "text/plain")
+            return
+        finally:
+            if cleanup_path:
+                try:
+                    storage_delete(repository, "psi-source", cleanup_path, token)
+                except (HTTPError, OSError, UploadAuthorizationError):
+                    pass
+
         self.send(201, json.dumps(persisted.to_json(), ensure_ascii=False).encode(), "application/json")
 
     def _query(self) -> dict[str, list[str]]:

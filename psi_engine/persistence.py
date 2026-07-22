@@ -107,6 +107,20 @@ class PsiMemoryRepository:
             raise UploadValidationError(f"invalid mismatch transition: {previous} -> {to_status}")
         mismatch["status"] = to_status
         self.insert("mismatch_history", {"mismatch_id": mismatch_id, "changed_by": actor_id, "from_status": previous, "to_status": to_status, "comment": comment, "evidence": evidence})
+        if to_status in {"resolved", "known", "ignored"}:
+            fingerprint = str(mismatch.get("fingerprint", ""))
+            if fingerprint:
+                self.upsert(
+                    "known_issues",
+                    {
+                        "fingerprint": fingerprint,
+                        "title": str(mismatch.get("record_key") or fingerprint),
+                        "reason": json.dumps({"action": to_status, "comment": comment, "evidence": evidence}, ensure_ascii=False, separators=(",", ":")),
+                        "status": "approved" if to_status == "resolved" else "known",
+                        "created_by": actor_id,
+                    },
+                    "fingerprint",
+                )
         self.insert("activity_logs", {"actor_id": actor_id, "action": "mismatch.transitioned", "entity_type": "mismatch", "entity_id": mismatch_id, "metadata": {"to_status": to_status}})
 
 
@@ -326,8 +340,8 @@ class PsiMemoryStore:
                 continue
             source, filename, sheet, row_number, code, description, message = issue[:7]
             source_type = source_types.get(str(source), request.source_type)
-            identity = json.dumps({"source_type": source_type, "sheet": sheet, "record_key": code or description, "issue": message}, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
-            issue_fingerprint = sha256((request.reporting_period + identity).encode()).hexdigest()
+            identity = json.dumps({"source_type": source_type, "record_key": code or description, "issue": message}, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+            issue_fingerprint = sha256(identity.encode()).hexdigest()
             if issue_fingerprint in existing_fingerprints:
                 continue
             existing_fingerprints.add(issue_fingerprint)

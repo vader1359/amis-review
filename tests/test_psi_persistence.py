@@ -186,6 +186,27 @@ def test_new_mismatch_has_exact_location_and_handled_fingerprint_is_suppressed()
     assert repository.rows("mismatches")[0]["status"] == "known"
 
 
+def test_known_mismatch_is_suppressed_in_later_reporting_periods() -> None:
+    repository = server.PsiMemoryRepository()
+    store = server.PsiMemoryStore(repository=repository)
+    product = (FIXTURES / "product_fixture.xlsx").read_bytes()
+    revenue = (FIXTURES / "so_chi_tiet_revenue_fixture.xlsx").read_bytes()
+
+    store.persist(server.UploadRequest("team-a", "user-a", "2026-07", "2026-07-05", "product", "product_fixture.xlsx", product))
+    store.persist(server.UploadRequest("team-a", "user-a", "2026-07", "2026-07-05", "revenue", "so_chi_tiet_revenue_fixture.xlsx", revenue))
+    mismatch_id = str(repository.rows("mismatches")[0]["id"])
+    repository.transition_mismatch(mismatch_id, "assigned", "", {}, "user-a")
+    repository.transition_mismatch(mismatch_id, "in_progress", "", {}, "user-a")
+    repository.transition_mismatch(mismatch_id, "known", "verified", {"source": "test"}, "user-a")
+
+    store.persist(server.UploadRequest("team-a", "user-a", "2026-08", "2026-08-05", "product", "product_fixture.xlsx", product))
+    store.persist(server.UploadRequest("team-a", "user-a", "2026-08", "2026-08-05", "revenue", "so_chi_tiet_revenue_fixture.xlsx", revenue))
+
+    assert len(repository.rows("known_issues")) == 1
+    assert len(repository.rows("mismatches")) == 1
+    assert repository.rows("mismatches")[0]["status"] == "known"
+
+
 def test_invalid_calendar_and_malformed_multipart_are_controlled_4xx() -> None:
     store = server.PsiMemoryStore()
     request = server.UploadRequest(

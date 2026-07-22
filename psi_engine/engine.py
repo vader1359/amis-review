@@ -107,7 +107,7 @@ def build(files: FileSet) -> PsiBuildResult:
         worksheet = source_book("inventory").active
         excluded = {"KHO BÌNH PHÚ HÀNG LỖI (KHO ẢO)", "KHO BÌNH PHÚ (KHO LỖI)", "KHO CHỊ KATHY", "KHO CHƯA XUẤT HÓA ĐƠN"}
         for row in worksheet.iter_rows(min_row=6, values_only=True):
-            if (norm(row[0]) if len(row) > 0 else "") in excluded or (norm(row[14]) if len(row) > 0 else "") == "LOẠI KHỎI TỒN KHO":
+            if (norm(row[0]) if len(row) > 0 else "") in excluded or (norm(row[14]) if len(row) > 14 else "") == "LOẠI KHỎI TỒN KHO":
                 continue
             inventory.append(row)
             quantity += row[11] if len(row) > 11 and isinstance(row[11], (int, float)) else 0

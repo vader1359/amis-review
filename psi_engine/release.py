@@ -5,6 +5,7 @@ from datetime import UTC, date, datetime, timedelta
 from hashlib import sha256
 import io
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 from secrets import token_urlsafe
 from typing import Protocol
 from uuid import uuid4
@@ -89,7 +90,14 @@ class PsiReleaseService:
         draft_path = f"{context['team_id']}/{request.reporting_period}/{draft_id}/PSI Draft.xlsx"
         object_path = f"{context['team_id']}/{request.reporting_period}/{release_id}/PSI Final.xlsx"
         try:
-            self._upload("psi-draft", draft_path, result.xlsx, auth_token)
+            # The draft and published artifact are identical in this MVP
+            # (there is no approval step). Upload both objects concurrently so
+            # storage latency does not consume the serverless request budget.
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                draft_upload = pool.submit(self._upload, "psi-draft", draft_path, result.xlsx, auth_token)
+                release_upload = pool.submit(self._upload, "psi-release", object_path, result.xlsx, auth_token)
+                draft_upload.result()
+                release_upload.result()
             repository.insert("psi_drafts", {"id": draft_id, "reporting_period_id": context["reporting_period_id"], "reconciliation_run_id": context["reconciliation_run_id"], "rule_version_id": context["rule_version_id"], "status": "approved", "object_path": draft_path, "checksum_sha256": checksum, "created_by": request.actor_id}, auth_token)
             for row in snapshots:
                 repository.insert("draft_sources", {"draft_id": draft_id, "source_snapshot_id": str(row["id"]), "source_type": str(row["source_type"])}, auth_token)
@@ -97,7 +105,6 @@ class PsiReleaseService:
             self._cleanup_attempt(context, draft_path, object_path, draft_id, release_id, auth_token)
             raise
         try:
-            self._upload("psi-release", object_path, result.xlsx, auth_token)
             repository.insert("psi_releases", {"id": release_id, "psi_draft_id": draft_id, "reporting_period_id": context["reporting_period_id"], "rule_version_id": context["rule_version_id"], "object_path": object_path, "checksum_sha256": checksum, "row_count": int(result.summary.get("Product master rows", 0)), "kpis": {"summary": str(result.summary)}, "approved_by": request.actor_id, "published_by": request.actor_id}, auth_token)
             for row in snapshots:
                 repository.insert("release_sources", {"release_id": release_id, "source_snapshot_id": str(row["id"]), "source_type": str(row["source_type"])}, auth_token)

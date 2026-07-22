@@ -13,13 +13,13 @@ from psi_engine.release_adapter import storage_delete, storage_download, storage
 from psi_engine.persistence import (
     ALLOWED_CONTENT_TYPE,
     PsiMemoryRepository,
-    REQUIRED_SOURCES,
     SupabaseRepository,
     UploadAuthorizationError,
     UploadRequest,
     UploadValidationError,
     week_to_period,
 )
+from psi_engine.sources import OPTIONAL_SOURCES, REQUIRED_SOURCES, UPLOAD_SOURCES
 
 
 class WeeklyRoutesMixin:
@@ -52,7 +52,7 @@ class WeeklyRoutesMixin:
                         "snapshot_id": latest[source].get("id"),
                         "filename": latest[source].get("original_filename"),
                     } if source in latest else {"status": "missing", "version": None, "snapshot_id": None, "filename": None}
-                    for source in REQUIRED_SOURCES
+                    for source in UPLOAD_SOURCES
                 }
                 mismatches = self.store.repository.lookup("mismatches", {"reporting_period_id": period_id}, token)
                 suppressed = {
@@ -74,14 +74,16 @@ class WeeklyRoutesMixin:
                         "sheet": details.get("sheet", ""), "row": details.get("row", ""), "code": details.get("code", ""),
                         "description": details.get("description", ""), "issue": details.get("issue", ""),
                     })
-                sources_ready = len(latest) == len(REQUIRED_SOURCES)
+                sources_ready = all(source in latest for source in REQUIRED_SOURCES)
                 gate = self.release_service.inspect_gate(ReleaseRequest(period_key, actor_id, team_id), token)
                 releases = self.store.repository.lookup("psi_releases", {"reporting_period_id": period_id}, token)
                 latest_release = max(releases, key=lambda row: str(row.get("published_at", "")), default=None)
                 download_url = storage_signed_download(self.store.repository, "psi-release", str(latest_release["object_path"]), 300, token) if latest_release else None
                 payload = {
                     "team_id": team_id, "week": period_key, "files": files,
-                    "owned_sources": list(REQUIRED_SOURCES), "ready": sources_ready,
+                    "required_sources": list(REQUIRED_SOURCES),
+                    "optional_sources": list(OPTIONAL_SOURCES),
+                    "owned_sources": list(UPLOAD_SOURCES), "ready": sources_ready,
                     "release_allowed": gate.allowed, "gate_reasons": list(gate.messages),
                     "mismatches": detailed_mismatches, "download_url": download_url,
                 }

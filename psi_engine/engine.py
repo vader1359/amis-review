@@ -146,6 +146,8 @@ def build(files: FileSet) -> PsiBuildResult:
     if "inventory" in by:
         source = load_workbook(io.BytesIO(by["inventory"]), read_only=True, data_only=True).active; output = workbook.create_sheet("Inventory final"); output.append(list(next(source.iter_rows(min_row=4, max_row=4, values_only=True))))
         for row in inventory: output.append(list(row))
+    # Pre-order feedback is a reviewed register. Keep it visible in the final
+    # workbook, but never treat its annotated rows as new mismatch candidates.
     copy_source("Pre-order source", "preorder"); copy_source("Pre-orders final", "preorder"); copy_source("Revenue raw", "revenue", None, 4)
     if "revenue" in by:
         source = load_workbook(io.BytesIO(by["revenue"]), read_only=True, data_only=True).active; output = workbook.create_sheet("Revenue final"); output.append(list(next(source.iter_rows(min_row=4, max_row=4, values_only=True))) + ["Net Revenue"])

@@ -1,4 +1,4 @@
-const files = { product: 'Product master', purchase: 'Purchase / PO', revenue: 'Revenue MISA', inventory: 'Inventory', preorder: 'Pre-order', crm: 'CRM Sale', target: 'Target' };
+const files = { product: 'Product master', purchase: 'Purchase / PO', revenue: 'Sổ chi tiết bán hàng (MISA)', inventory: 'Inventory', preorder: 'Pre-order feedback (đã ghi nhận)', crm: 'CRM Sale', target: 'Target' };
 const team = document.querySelector('#team');
 const week = document.querySelector('#week');
 const dataAsOf = document.querySelector('#data-as-of');
@@ -33,14 +33,16 @@ async function refresh() {
   if (!response.ok) { message.textContent = await response.text(); return; }
   const status = await response.json();
   const owned = Array.isArray(status.owned_sources) ? status.owned_sources : Object.keys(files);
-  checklist.innerHTML = owned.map(source => { const label = files[source] || source; const item = status.files?.[source] || { status: 'missing' }; return `<div class="check-item"><div><strong>${label}</strong><small>${item.status === 'uploaded' ? `Đã nộp · phiên bản ${item.version}` : 'Chưa có file'}</small></div><label class="ant-btn ant-btn-default">${item.status === 'uploaded' ? 'Tải lại' : 'Chọn file'}<input type="file" accept=".xlsx" data-source="${source}" hidden></label></div>`; }).join('');
+  const required = Array.isArray(status.required_sources) ? status.required_sources : owned.filter(source => source !== 'preorder');
+  const optional = new Set(Array.isArray(status.optional_sources) ? status.optional_sources : ['preorder']);
+  checklist.innerHTML = owned.map(source => { const label = files[source] || source; const item = status.files?.[source] || { status: 'missing' }; const isOptional = optional.has(source); return `<div class="check-item"><div><strong>${label}${isOptional ? ' · tùy chọn' : ''}</strong><small>${item.status === 'uploaded' ? `Đã nộp · phiên bản ${item.version}${isOptional ? ' · chỉ tham chiếu' : ''}` : isOptional ? 'Chưa nộp · không ảnh hưởng PSI Final' : 'Chưa có file'}</small></div><label class="ant-btn ant-btn-default">${item.status === 'uploaded' ? 'Tải lại' : 'Chọn file'}<input type="file" accept=".xlsx" data-source="${source}" hidden></label></div>`; }).join('');
   const isReady = Boolean(status.ready);
   const mismatches = Array.isArray(status.mismatches) ? status.mismatches : [];
   const gateReasons = Array.isArray(status.gate_reasons) ? status.gate_reasons : [];
   const releaseAllowed = status.release_allowed === undefined ? isReady && mismatches.length === 0 : Boolean(status.release_allowed);
   ready.textContent = releaseAllowed ? 'PSI sẵn sàng' : !isReady ? 'Chưa đủ file' : mismatches.length ? 'Cần xử lý mismatch' : 'Chưa đạt điều kiện xuất';
   ready.className = `badge ${releaseAllowed ? '' : 'quiet'}`;
-  message.textContent = !isReady ? `Cần đủ ${owned.length || 7} file nguồn để tạo PSI Final.` : mismatches.length ? `Còn ${mismatches.length} mismatch phải xử lý trước khi xuất PSI.` : gateReasons.length ? gateReasons.join('. ') : 'Đã đủ file và không còn mismatch mở. Có thể tạo PSI Final.';
+  message.textContent = !isReady ? `Cần đủ ${required.length || 6} file nguồn bắt buộc để tạo PSI Final.` : mismatches.length ? `Còn ${mismatches.length} mismatch phải xử lý trước khi xuất PSI.` : gateReasons.length ? gateReasons.join('. ') : 'Đã đủ file và không còn mismatch mở. Có thể tạo PSI Final.';
   releaseButton.disabled = !releaseAllowed;
   download.classList.toggle('hidden', !status.download_url);
   download.href = status.download_url || '#';

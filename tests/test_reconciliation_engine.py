@@ -98,3 +98,14 @@ def test_build_returns_deterministic_mismatch_fingerprint_when_fixture_set_is_pr
     assert first["issues"] == second["issues"]
     assert first["issues"][0] == ["Revenue", "so_chi_tiet_revenue_fixture.xlsx", "Sheet", 6, "SKU-MISSING", "Missing revenue", "Missing Product mapping"]
     assert issue_fingerprint(first["issues"]) == "ff37cbbba03d3ea7a29ba2b269834d87fe056eb2bdc3dd8a2d8f8e98f2b5fd07"
+
+
+def test_reviewed_preorder_feedback_never_changes_mismatch_detection() -> None:
+    files = fixture_files()
+    without_feedback = {name: content for name, content in files.items() if name != "pre-order_fixture.xlsx"}
+
+    with_feedback_result = server.build(files)
+    without_feedback_result = server.build(without_feedback)
+
+    assert with_feedback_result["issues"] == without_feedback_result["issues"]
+    assert with_feedback_result["gaps"] == without_feedback_result["gaps"]

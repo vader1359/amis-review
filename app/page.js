@@ -9,9 +9,9 @@ const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 const SOURCES = {
   product: 'Product master',
   purchase: 'Purchase / PO',
-  revenue: 'Revenue MISA',
+  revenue: 'Sổ chi tiết bán hàng (MISA)',
   inventory: 'Inventory',
-  preorder: 'Pre-order',
+  preorder: 'Pre-order feedback (đã ghi nhận)',
   crm: 'CRM Sale',
   target: 'Target',
 };
@@ -70,10 +70,11 @@ export default function Home() {
       const nextStatus = await response.json();
       setStatus(nextStatus);
       const owned = Array.isArray(nextStatus.owned_sources) ? nextStatus.owned_sources : Object.keys(SOURCES);
+      const required = Array.isArray(nextStatus.required_sources) ? nextStatus.required_sources : owned.filter((source) => source !== 'preorder');
       const mismatches = Array.isArray(nextStatus.mismatches) ? nextStatus.mismatches : [];
       const gateReasons = Array.isArray(nextStatus.gate_reasons) ? nextStatus.gate_reasons : [];
       if (!nextStatus.ready) {
-        setMessage(`Cần đủ ${owned.length || 7} file nguồn để tạo PSI Final.`);
+        setMessage(`Cần đủ ${required.length || 6} file nguồn bắt buộc để tạo PSI Final.`);
       } else if (mismatches.length) {
         setMessage(`Còn ${mismatches.length} mismatch phải xử lý trước khi xuất PSI.`);
       } else if (gateReasons.length) {
@@ -223,6 +224,7 @@ export default function Home() {
   }
 
   const ownedSources = Array.isArray(status?.owned_sources) ? status.owned_sources : Object.keys(SOURCES);
+  const optionalSources = new Set(Array.isArray(status?.optional_sources) ? status.optional_sources : ['preorder']);
   const mismatches = Array.isArray(status?.mismatches) ? status.mismatches : [];
   const releaseAllowed = Boolean(status?.release_allowed);
 
@@ -232,7 +234,7 @@ export default function Home() {
         <div className="hero-copy">
           <p className="eyebrow">PSI / CÔNG CỤ DÙNG CHUNG</p>
           <h1>Danh sách file cần nộp</h1>
-          <p className="lead">Các team tải đủ 7 file nguồn theo thời điểm của mình. Mỗi lần tải lại được lưu thành một phiên bản mới.</p>
+          <p className="lead">Các team tải 6 file raw bắt buộc theo thời điểm của mình. Pre-order feedback là bảng tham chiếu tùy chọn cho các case đã ghi nhận.</p>
         </div>
         <span className={`ant-tag badge ${accessToken ? 'ant-tag-green' : 'ant-tag-gold'}`}>
           {!authChecked ? 'ĐANG KIỂM TRA PHIÊN' : accessToken ? 'ĐÃ ĐĂNG NHẬP' : 'YÊU CẦU ĐĂNG NHẬP'}
@@ -267,14 +269,15 @@ export default function Home() {
           </section>
 
           <section className="card">
-            <div className="section-heading"><div><p className="eyebrow">02 / CHECKLIST</p><h2>File bắt buộc</h2><p className="hint">Tất cả team nhìn cùng một checklist và lịch sử phiên bản.</p></div><button className="ant-btn ant-btn-default" type="button" onClick={refresh}>Cập nhật</button></div>
+            <div className="section-heading"><div><p className="eyebrow">02 / CHECKLIST</p><h2>Nguồn dữ liệu &amp; feedback</h2><p className="hint">Tất cả team nhìn cùng checklist. Pre-order feedback không sinh mismatch mới và không chặn PSI Final.</p></div><button className="ant-btn ant-btn-default" type="button" onClick={refresh}>Cập nhật</button></div>
             <div className="checklist">
               {ownedSources.map((source) => {
                 const item = status?.files?.[source] || { status: 'missing' };
                 const busy = uploadingSource === source;
+                const optional = optionalSources.has(source);
                 return (
                   <div className="check-item" key={source}>
-                    <div><strong>{SOURCES[source] || source}</strong><small>{item.status === 'uploaded' ? `Đã nộp · phiên bản ${item.version} · ${item.filename || ''}` : 'Chưa có file'}</small></div>
+                    <div><strong>{SOURCES[source] || source}{optional ? ' · tùy chọn' : ''}</strong><small>{item.status === 'uploaded' ? `Đã nộp · phiên bản ${item.version} · ${item.filename || ''}${optional ? ' · chỉ tham chiếu' : ''}` : optional ? 'Chưa nộp · không ảnh hưởng PSI Final' : 'Chưa có file'}</small></div>
                     <label className={`ant-btn ant-btn-default file-button ${busy ? 'disabled' : ''}`}>
                       {busy ? 'Đang xử lý...' : item.status === 'uploaded' ? 'Tải lại' : 'Chọn file'}
                       <input type="file" accept=".xlsx" hidden disabled={Boolean(uploadingSource)} onChange={(event) => upload(source, event.target.files?.[0])} />

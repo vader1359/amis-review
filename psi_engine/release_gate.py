@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
-from typing import Final
 
-REQUIRED_SOURCES: Final[tuple[str, ...]] = ("product", "purchase", "revenue", "inventory", "preorder", "crm", "target")
+from .sources import REQUIRED_SOURCES
+
+
 @dataclass(frozen=True, slots=True)
 class ReleaseGateReason:
     code: str
@@ -30,12 +31,13 @@ def evaluate_gate(
 ) -> ReleaseGateDecision:
     reasons: list[ReleaseGateReason] = []
     source_types = {str(row.get("source_type")) for row in snapshots}
+    required_snapshots = [row for row in snapshots if str(row.get("source_type")) in REQUIRED_SOURCES]
     missing = sorted(set(REQUIRED_SOURCES) - source_types)
     if missing:
         reasons.append(ReleaseGateReason("missing_required_source", "selected source required: " + ", ".join(missing)))
-    if any(str(row.get("schema_status")) != "passed" for row in snapshots):
+    if any(str(row.get("schema_status")) != "passed" for row in required_snapshots):
         reasons.append(ReleaseGateReason("schema_failure", "schema results are not clean"))
-    for row in snapshots:
+    for row in required_snapshots:
         try:
             age = (as_of - date.fromisoformat(str(row.get("data_as_of")))).days
         except ValueError:

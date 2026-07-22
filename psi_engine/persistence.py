@@ -13,11 +13,11 @@ from uuid import uuid4
 from openpyxl import load_workbook
 
 from .engine import build, classify
+from .sources import OPTIONAL_SOURCES, REQUIRED_SOURCES, UPLOAD_SOURCES
 
 MAX_UPLOAD_BYTES: Final = 25 * 1024 * 1024
 ALLOWED_CONTENT_TYPE: Final = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 TABLES: Final = ("upload_batches", "source_snapshots", "source_snapshot_metadata", "source_selections", "reconciliation_runs", "reconciliation_run_sources", "normalized_records", "mismatches", "mismatch_history", "known_issues", "psi_drafts", "draft_sources", "psi_releases", "release_sources", "activity_logs")
-REQUIRED_SOURCES: Final = ("product", "purchase", "revenue", "inventory", "preorder", "crm", "target")
 
 
 def week_to_period(week: str) -> tuple[str, str]:
@@ -344,11 +344,19 @@ class PsiMemoryStore:
         week_to_period(week)
         latest: dict[str, Snapshot] = {}
         for snapshot in self.snapshots:
-            if snapshot.team_id == team_id and snapshot.reporting_period == week and snapshot.source_type in REQUIRED_SOURCES:
+            if snapshot.team_id == team_id and snapshot.reporting_period == week and snapshot.source_type in UPLOAD_SOURCES:
                 if snapshot.source_type not in latest or snapshot.version > latest[snapshot.source_type].version:
                     latest[snapshot.source_type] = snapshot
-        files = {source: {"status": "uploaded", "version": latest[source].version, "snapshot_id": latest[source].id, "filename": latest[source].original_filename} if source in latest else {"status": "missing", "version": None, "snapshot_id": None, "filename": None} for source in REQUIRED_SOURCES}
-        payload: dict[str, object] = {"team_id": team_id, "week": week, "files": files, "ready": len(latest) == len(REQUIRED_SOURCES)}
+        files = {source: {"status": "uploaded", "version": latest[source].version, "snapshot_id": latest[source].id, "filename": latest[source].original_filename} if source in latest else {"status": "missing", "version": None, "snapshot_id": None, "filename": None} for source in UPLOAD_SOURCES}
+        payload: dict[str, object] = {
+            "team_id": team_id,
+            "week": week,
+            "files": files,
+            "required_sources": list(REQUIRED_SOURCES),
+            "optional_sources": list(OPTIONAL_SOURCES),
+            "owned_sources": list(UPLOAD_SOURCES),
+            "ready": all(source in latest for source in REQUIRED_SOURCES),
+        }
         if payload["ready"]:
             from psi_engine.release import PsiReleaseService, ReleaseRequest
             record = PsiReleaseService(self).generate(ReleaseRequest(week, "anonymous-uploader", team_id))

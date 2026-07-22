@@ -71,6 +71,31 @@ def test_weekly_status_exposes_download_after_all_sources() -> None:
     assert status["download_url"]
 
 
+def test_preorder_feedback_is_optional_reference_and_never_creates_mismatch() -> None:
+    store = server.PsiMemoryStore()
+    store.persist(request("preorder"))
+    status = store.weekly_status("team-a", "2026-W29")
+
+    assert status["files"]["preorder"]["status"] == "uploaded"
+    assert status["optional_sources"] == ["preorder"]
+    assert "preorder" not in status["required_sources"]
+    assert status["ready"] is False
+    assert store.repository.rows("mismatches") == []
+
+
+def test_weekly_status_releases_without_preorder_feedback() -> None:
+    store = server.PsiMemoryStore()
+    for source in SOURCES:
+        if source != "preorder":
+            store.persist(request(source))
+
+    status = store.weekly_status("team-a", "2026-W29")
+
+    assert status["ready"] is True
+    assert status["files"]["preorder"]["status"] == "missing"
+    assert status["download_url"]
+
+
 def test_weekly_release_does_not_cross_team_versions() -> None:
     store = server.PsiMemoryStore()
     for source in SOURCES:

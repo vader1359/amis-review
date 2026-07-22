@@ -10,6 +10,7 @@ sys.path.insert(0, str(ROOT / "web"))
 import server  # noqa: E402
 from psi_engine import PsiReleaseService, ReleaseConfig, ReleaseGateError, ReleaseRequest, evaluate_gate
 from psi_engine.release_gate import REQUIRED_SOURCES
+from psi_engine.sources import OPTIONAL_SOURCES
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -74,6 +75,16 @@ def test_release_gate_blocks_only_unhandled_mismatches(severity: str, status: st
     decision = evaluate_gate(snapshots, [{"severity": severity, "status": status}], date(2026, 7, 5), 30)
     assert decision.allowed is allowed
     assert (not decision.reasons) is allowed
+
+
+def test_optional_feedback_does_not_block_release_when_old_or_schema_failed() -> None:
+    snapshots = [{"source_type": source, "schema_status": "passed", "data_as_of": "2026-07-05"} for source in REQUIRED_SOURCES]
+    snapshots.append({"source_type": OPTIONAL_SOURCES[0], "schema_status": "failed", "data_as_of": "2025-01-01"})
+
+    decision = evaluate_gate(snapshots, [], date(2026, 7, 5), 30)
+
+    assert decision.allowed is True
+    assert decision.reasons == ()
 
 
 def test_release_refuses_final_when_reconciliation_has_new_mismatch() -> None:

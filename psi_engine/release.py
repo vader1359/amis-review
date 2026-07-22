@@ -70,6 +70,12 @@ class PsiReleaseService:
         decision = self._gate(snapshots, request, auth_token)
         if not decision.allowed:
             raise ReleaseGateError("; ".join(decision.messages), decision.messages)
+        # A browser retry is common when a serverless request times out after
+        # the artifact was already published. Return the existing release for
+        # the same selected snapshot set instead of rebuilding it again.
+        existing = self._existing_release(request, snapshots, auth_token)
+        if existing is not None:
+            return existing
         files = {str(row["original_filename"]): self._source_bytes(str(row["object_path"]), auth_token) for row in snapshots}
         for row in snapshots:
             if sha256(files[str(row["original_filename"])]).hexdigest() != str(row["checksum_sha256"]):
@@ -114,6 +120,25 @@ class PsiReleaseService:
             raise
         signed_url = self._signed_url(object_path, request.actor_id, auth_token)
         return ReleaseRecord(release_id, draft_id, object_path, checksum, source_ids, "published", signed_url)
+
+    def _existing_release(self, request: ReleaseRequest, snapshots: list[dict[str, str | int | list[str] | dict[str, str] | None]], auth_token: str) -> ReleaseRecord | None:
+        repository = self.store.repository
+        if isinstance(repository, PsiMemoryRepository):
+            return None
+        periods = repository.lookup("reporting_periods", {"period_key": request.reporting_period}, auth_token)
+        if not periods:
+            return None
+        period_id = str(periods[0]["id"])
+        wanted = {str(row["id"]) for row in snapshots}
+        releases = repository.lookup("psi_releases", {"reporting_period_id": period_id}, auth_token)
+        for row in releases:
+            release_id = str(row["id"])
+            sources = repository.lookup("release_sources", {"release_id": release_id}, auth_token)
+            if {str(source["source_snapshot_id"]) for source in sources} != wanted:
+                continue
+            path = str(row["object_path"])
+            return ReleaseRecord(release_id, str(row["psi_draft_id"]), path, str(row["checksum_sha256"]), tuple(sorted(wanted)), str(row.get("status", "published")), self._signed_url(path, request.actor_id, auth_token))
+        return None
 
     def local_download(self, token: str, actor_id: str) -> bytes:
         entry = self.tokens.get(token)

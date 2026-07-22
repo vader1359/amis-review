@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Nộp file PSI theo tuần">
+  <title>Nộp file PSI</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/antd@5.27.1/dist/reset.css">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="hero-copy">
+        <p class="eyebrow">PSI / NỘP FILE THEO TUẦN</p>
+        <h1>Danh sách file cần nộp</h1>
+        <p class="lead">Chọn team, chọn tuần, rồi tải đủ 7 file nguồn. Mỗi lần tải lại được lưu thành một phiên bản mới.</p>
+      </div>
+      <span id="auth-badge" class="ant-tag ant-tag-blue badge">ĐANG KIỂM TRA PHIÊN</span>
+    </header>
+
+    <section id="login-card" class="ant-card card">
+      <div class="section-heading"><div><p class="eyebrow">XÁC THỰC</p><h2>Đăng nhập PSI</h2><p class="hint">Chỉ tài khoản được cấp mới có thể nộp và phát hành báo cáo.</p></div></div>
+      <form id="login-form" class="form-grid" novalidate>
+        <label class="ant-form-item">Email<input id="login-email" class="ant-input" type="email" autocomplete="username" required></label>
+        <label class="ant-form-item">Mật khẩu<input id="login-password" class="ant-input" type="password" autocomplete="current-password" required></label>
+        <button class="ant-btn ant-btn-primary" type="submit">Đăng nhập</button>
+      </form>
+      <p id="login-message" class="hint" role="status" aria-live="polite"></p>
+    </section>
+
+    <div id="workspace" class="hidden">
+      <div class="ant-alert ant-alert-info notice" role="note"><strong>Lưu ý:</strong> Team và tuần là metadata để phân nhóm báo cáo. Mismatch chỉ là chẩn đoán và không chặn tạo workbook.</div>
+      <section class="ant-card card">
+        <div class="section-heading"><div><p class="eyebrow">01 / PHẠM VI</p><h2>Team và tuần báo cáo</h2></div><span id="ready" class="ant-tag ant-tag-gold badge quiet">Chưa đủ file</span></div>
+        <div class="form-grid">
+          <label class="ant-form-item">Team<select id="team" class="ant-select-selector"><option value="team-a">Team A</option><option value="team-b">Team B</option></select></label>
+          <label class="ant-form-item">Tuần báo cáo<input id="week" class="ant-input" type="week" value="2026-W29" required></label>
+        </div>
+      </section>
+      <section class="ant-card card">
+        <div class="section-heading"><div><p class="eyebrow">02 / CHECKLIST</p><h2>File bắt buộc</h2><p class="hint">Nguồn chỉ hiện khi được backend phân quyền cho bạn.</p></div><button id="refresh" class="ant-btn ant-btn-default" type="button">Cập nhật</button></div>
+        <div id="checklist" class="checklist"></div>
+      </section>
+      <section class="ant-card card result-card">
+        <div class="section-heading"><div><p class="eyebrow">03 / PSI FINAL</p><h2>Kết quả tuần</h2></div><div class="actions"><button id="generate" class="ant-btn ant-btn-primary" type="button">Generate PSI</button><button id="release" class="ant-btn ant-btn-default" type="button">Release</button></div></div>
+        <p id="message" class="hint" role="status" aria-live="polite">Đang kiểm tra checklist.</p>
+        <div id="diagnostics" class="hint" aria-live="polite"></div>
+        <a id="download" class="ant-btn ant-btn-primary hidden" download>Tải PSI Final</a>
+      </section>
+      <button id="logout" class="ant-btn ant-btn-default" type="button">Đăng xuất</button>
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

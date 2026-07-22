@@ -3,3 +3,14 @@
 .omo/
 __pycache__/
 *.pyc
+.env
+.env.*
+!.env.example
+.psi-qa-tmp/
+.playwright-mcp/
+playwright-report/
+test-results/
+
+# MemPalace per-project files (issue #185)
+mempalace.yaml
+entities.json

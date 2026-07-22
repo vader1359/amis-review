@@ -107,11 +107,11 @@ def build(files: FileSet) -> PsiBuildResult:
         worksheet = source_book("inventory").active
         excluded = {"KHO BÌNH PHÚ HÀNG LỖI (KHO ẢO)", "KHO BÌNH PHÚ (KHO LỖI)", "KHO CHỊ KATHY", "KHO CHƯA XUẤT HÓA ĐƠN"}
         for row in worksheet.iter_rows(min_row=6, values_only=True):
-            if (norm(row[0]) if len(row)  else "") in excluded or (norm(row[14]) if len(row)  else "") == "LOẠI KHỎI TỒN KHO":
+            if (norm(row[0]) if len(row) > 0 else "") in excluded or (norm(row[14]) if len(row) > 0 else "") == "LOẠI KHỎI TỒN KHO":
                 continue
             inventory.append(row)
-            quantity += row[11] if len(row)  and isinstance(row[11], (int, float)) else 0
-            value += row[12] if len(row)  and isinstance(row[12], (int, float)) else 0
+            quantity += row[11] if len(row) > 11 and isinstance(row[11], (int, float)) else 0
+            value += row[12] if len(row) > 12 and isinstance(row[12], (int, float)) else 0
     purchase: list[tuple[Cell, ...]] = []
     purchase_excluded: list[list[Cell]] = []
     foc = excluded_po = 0

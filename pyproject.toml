@@ -1,0 +1,90 @@
+[build-system]
+requires = ["uv_build>=0.12.0,<0.13.0"]
+build-backend = "uv_build"
+
+[project]
+name = "psi-tool"
+version = "0.1.0"
+description = "PSI data inspection tooling"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastexcel>=0.19.0",
+    "numpy>=2.0.0",
+    "polars>=1.0.0",
+    "pydantic>=2.0.0",
+    "pyarrow>=17.0.0",
+    "rich>=13.0.0",
+    "typer>=0.15.0",
+]
+
+[project.scripts]
+psi = "psi_tool.__main__:main"
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.31.0",
+    "pytest>=8.0.0",
+    "ruff>=0.12.0",
+]
+
+[tool.basedpyright]
+typeCheckingMode = "all"
+pythonVersion = "3.13"
+pythonPlatform = "All"
+include = ["src", "test", "tests"]
+exclude = [
+    "**/__pycache__",
+    "**/.venv",
+    "**/build",
+    "**/dist",
+    "test/test_benchmark_xlsx_pipeline.py",
+    "test/test_manual_check.py",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+src = ["src", "test", "tests"]
+extend-exclude = [
+    "test/test_benchmark_xlsx_pipeline.py",
+    "test/test_manual_check.py",
+]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "COM812",
+    "CPY001",
+    "D203",
+    "D213",
+    "FBT001",
+    "FBT002",
+    "FIX002",
+    "ISC001",
+    "TD002",
+    "TD003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/psi_payload_parquet.py" = ["D", "INP001", "TC003"]
+"test/**/*.py" = ["ARG", "D", "PLR2004", "S101", "S603", "SLF001"]
+"tests/**/*.py" = [
+    "ARG",
+    "D",
+    "INP001",
+    "PLR2004",
+    "S101",
+    "S603",
+    "SLF001",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["test", "tests"]
+pythonpath = ["src"]
+addopts = ["-ra", "--strict-config", "--strict-markers"]
+filterwarnings = ["error"]

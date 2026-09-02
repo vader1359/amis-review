@@ -1,0 +1,20 @@
+wing: amis_review
+rooms:
+- name: input
+  description: Files from input/
+  keywords:
+  - input
+  - input
+- name: old_check
+  description: Files from old_check/
+  keywords:
+  - old_check
+  - old_check
+- name: scripts
+  description: Files from scripts/
+  keywords:
+  - scripts
+  - scripts
+- name: general
+  description: Files that don't fit other rooms
+  keywords: []

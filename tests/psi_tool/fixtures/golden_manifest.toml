@@ -1,0 +1,233 @@
+schema_version = "1.0"
+contract_version = "1.1"
+relation_hash_algorithm = "psi-semantic-string-v1"
+as_of = 2026-08-30
+
+[[sources]]
+source_id = "crm_sale_workbook"
+relative_path = "PSI_SAMPLE_INPUT/CRM_Sale_sample.xlsx"
+sha256 = "d3c7ddb0835d3ec12c52d50a34e96ca57f5a5126f2d531cc35173213e0fe3c4d"
+fresh_required = true
+carry_forward = false
+
+[[sources]]
+source_id = "product_master_workbook"
+relative_path = "PSI_SAMPLE_INPUT/Product_master_sample.xlsx"
+sha256 = "d665711e28e588375c57e1d2088ad89857bb472e8a6b03529591ddc81d3ab156"
+fresh_required = true
+carry_forward = false
+
+[[sources]]
+source_id = "sales_detail_misa_workbook"
+relative_path = "PSI_SAMPLE_INPUT/Sales_detail_MISA_sample.xlsx"
+sha256 = "1ec89484a30fa5caae2217444daf601ba68ed944afa693666285315b414e53b8"
+fresh_required = true
+carry_forward = false
+
+[[sources]]
+source_id = "inventory_workbook"
+relative_path = "PSI_SAMPLE_INPUT/Inventory_sample.xlsx"
+sha256 = "0d79817a63b60b228881672728207b680158fff55f633b83c3322de06eb47417"
+fresh_required = true
+carry_forward = false
+
+[[sources]]
+source_id = "purchase_po_workbook"
+relative_path = "PSI_SAMPLE_INPUT/Purchase_PO_sample.xlsx"
+sha256 = "768081ce81192e00d80c47081ea1e697aba5dcb6cb4c45587ab1172ed0d63137"
+fresh_required = false
+carry_forward = true
+carry_forward_sha256 = "768081ce81192e00d80c47081ea1e697aba5dcb6cb4c45587ab1172ed0d63137"
+carry_forward_reason = "sanitized golden fixture approved for ingest checkpoint"
+
+[[sources]]
+source_id = "target_workbook"
+relative_path = "PSI_SAMPLE_INPUT/Target_sample.xlsx"
+sha256 = "d55f701d64adba55ed9f057b110574b184d2d1a2e1353042c1313c99e8c60e3e"
+fresh_required = false
+carry_forward = true
+carry_forward_sha256 = "d55f701d64adba55ed9f057b110574b184d2d1a2e1353042c1313c99e8c60e3e"
+carry_forward_reason = "sanitized golden fixture approved for ingest checkpoint"
+
+[[relations]]
+relation_id = "crm_sales"
+expected_relation_sha256 = "a8da7cd3326448ced75f89412db8167619cbf0a48aa6020c56dfa4ed0a9e279a"
+source_id = "crm_sale_workbook"
+sheet_name = "Danh sách"
+physical_shape = [9983, 40]
+logical_data_shape = [9982, 40]
+header_strategy = { kind = "single_row", row_index = 0 }
+projection = [
+  { canonical_name = "order_number", source_header = "Số đơn hàng", dtype = "String" },
+  { canonical_name = "approval_date", source_header = "Ngày duyệt", dtype = "String" },
+  { canonical_name = "posting_date", source_header = "Ngày ghi sổ", dtype = "String" },
+  { canonical_name = "approval_status", source_header = "Trạng thái phê duyệt", dtype = "String" },
+  { canonical_name = "order_status", source_header = "Tình trạng", dtype = "String" },
+  { canonical_name = "sales_recording_status", source_header = "Tình trạng ghi doanh số", dtype = "String" },
+  { canonical_name = "delivery_status", source_header = "Tình trạng giao hàng", dtype = "String" },
+  { canonical_name = "payment_status", source_header = "Tình trạng thanh toán", dtype = "String" },
+  { canonical_name = "customer_code", source_header = "Mã khách hàng", dtype = "String" },
+  { canonical_name = "store", source_header = "Cửa hàng", dtype = "String" },
+  { canonical_name = "product_type", source_header = "Loại hàng hóa", dtype = "String" },
+  { canonical_name = "promotion_applied", source_header = "CTKM áp dụng", dtype = "String" },
+  { canonical_name = "order_value", source_header = "Giá trị đơn hàng", dtype = "String" },
+  { canonical_name = "amount_after_discount", source_header = "Thành tiền sau CK", dtype = "String" },
+  { canonical_name = "amount_receivable", source_header = "Còn phải thu", dtype = "String" },
+  { canonical_name = "invoiced_value", source_header = "Giá trị đã xuất hóa đơn", dtype = "String" },
+  { canonical_name = "uninvoiced_value", source_header = "Giá trị chưa xuất hóa đơn", dtype = "String" },
+]
+
+[[relations]]
+relation_id = "crm_sale_items"
+expected_relation_sha256 = "692e5202713ceffcee372c30c076ece2da8108e117fd30119fb93e8d5c30fcbe"
+source_id = "crm_sale_workbook"
+sheet_name = "Bảng hàng hóa"
+physical_shape = [49123, 33]
+logical_data_shape = [49122, 33]
+header_strategy = { kind = "single_row", row_index = 0 }
+projection = [
+  { canonical_name = "order_number", source_header = "Số đơn hàng", dtype = "String" },
+  { canonical_name = "product_code", source_header = "Mã hàng hóa", dtype = "String" },
+  { canonical_name = "legacy_misa_code", source_header = "Mã MISA cũ", dtype = "String" },
+  { canonical_name = "ordered_quantity", source_header = "Số lượng", dtype = "String" },
+  { canonical_name = "delivered_quantity", source_header = "Số lượng giao", dtype = "String" },
+  { canonical_name = "unit_price", source_header = "Đơn giá", dtype = "String" },
+  { canonical_name = "price_after_tax", source_header = "Đơn giá sau thuế", dtype = "String" },
+  { canonical_name = "discount_rate", source_header = "Tỷ lệ chiết khấu", dtype = "String" },
+  { canonical_name = "total_amount", source_header = "Tổng tiền", dtype = "String" },
+  { canonical_name = "discount_amount", source_header = "Tiền chiết khấu", dtype = "String" },
+  { canonical_name = "line_amount", source_header = "Thành tiền", dtype = "String" },
+  { canonical_name = "promotional_item", source_header = "Hàng KM", dtype = "String" },
+  { canonical_name = "tax_rate", source_header = "Thuế suất", dtype = "String" },
+  { canonical_name = "tax_amount", source_header = "Tiền thuế", dtype = "String" },
+  { canonical_name = "category", source_header = "Category", dtype = "String" },
+  { canonical_name = "origin", source_header = "Nguồn gốc", dtype = "String" },
+  { canonical_name = "sub_category", source_header = "Sub Category", dtype = "String" },
+  { canonical_name = "amount_after_discount", source_header = "Thành tiền sau CK", dtype = "String" },
+  { canonical_name = "price_after_discount", source_header = "Đơn giá sau CK", dtype = "String" },
+]
+
+[[relations]]
+relation_id = "product_master"
+expected_relation_sha256 = "a2fcd513c85a38efb35db45084f6be5131343eaf8316368fe79130bcaecf5820"
+source_id = "product_master_workbook"
+sheet_name = "Danh sách"
+physical_shape = [27731, 23]
+logical_data_shape = [27730, 23]
+header_strategy = { kind = "single_row", row_index = 0 }
+projection = [
+  { canonical_name = "product_code", source_header = "Mã hàng hóa", dtype = "String" },
+  { canonical_name = "product_name", source_header = "Tên hàng hóa", dtype = "String" },
+  { canonical_name = "primary_unit", source_header = "Đơn vị tính chính", dtype = "String" },
+  { canonical_name = "origin", source_header = "Nguồn gốc", dtype = "String" },
+  { canonical_name = "product_type", source_header = "Loại hàng hóa", dtype = "String" },
+  { canonical_name = "status", source_header = "Tình trạng", dtype = "String" },
+  { canonical_name = "brand_code", source_header = "Mã hãng", dtype = "String" },
+  { canonical_name = "legacy_misa_code", source_header = "Mã MISA cũ", dtype = "String" },
+  { canonical_name = "category", source_header = "Category ", dtype = "String" },
+  { canonical_name = "sub_category", source_header = "Sub Category ", dtype = "String" },
+  { canonical_name = "sale_price", source_header = "Đơn giá bán", dtype = "String" },
+  { canonical_name = "vat_rate", source_header = "Thuế GTGT", dtype = "String" },
+  { canonical_name = "sale_price_includes_tax", source_header = "Giá bán là đơn giá sau thuế", dtype = "String" },
+]
+
+[[relations]]
+relation_id = "sales_detail_misa"
+expected_relation_sha256 = "8026d30fd932067806f7389737571cdf208736fda9f09d62f19ddc54622f9f45"
+source_id = "sales_detail_misa_workbook"
+sheet_name = "SỔ CHI TIẾT BÁN HÀNG"
+physical_shape = [12053, 38]
+logical_data_shape = [12049, 38]
+header_strategy = { kind = "single_row", row_index = 3, nonblank_header_count = 38 }
+projection = [
+  { canonical_name = "posting_date", source_header = "Ngày hạch toán", dtype = "String" },
+  { canonical_name = "document_date", source_header = "Ngày chứng từ", dtype = "String" },
+  { canonical_name = "document_number", source_header = "Số chứng từ", dtype = "String" },
+  { canonical_name = "invoice_date", source_header = "Ngày hóa đơn", dtype = "String" },
+  { canonical_name = "item_code", source_header = "Mã hàng", dtype = "String" },
+  { canonical_name = "item_name", source_header = "Tên hàng", dtype = "String" },
+  { canonical_name = "accounting_note", source_header = "KT note", dtype = "String" },
+  { canonical_name = "sales_quantity", source_header = "Số lượng bán", dtype = "String" },
+  { canonical_name = "total_sales_quantity", source_header = "Tổng số lượng bán", dtype = "String" },
+  { canonical_name = "sales_revenue", source_header = "Doanh số bán", dtype = "String" },
+  { canonical_name = "debit_account", source_header = "TK Nợ", dtype = "String" },
+  { canonical_name = "credit_account", source_header = "TK Có", dtype = "String" },
+  { canonical_name = "discount_amount", source_header = "Chiết khấu", dtype = "String" },
+  { canonical_name = "discount_rate", source_header = "Tỷ lệ CK", dtype = "String" },
+  { canonical_name = "total_return_quantity", source_header = "Tổng số lượng trả lại", dtype = "String" },
+  { canonical_name = "return_value", source_header = "Giá trị trả lại", dtype = "String" },
+  { canonical_name = "reduction_value", source_header = "Giá trị giảm giá", dtype = "String" },
+  { canonical_name = "cost_account", source_header = "TK giá vốn", dtype = "String" },
+  { canonical_name = "cost_value", source_header = "Giá vốn", dtype = "String" },
+  { canonical_name = "order_number", source_header = "Đơn hàng", dtype = "String" },
+  { canonical_name = "warehouse_code", source_header = "Mã kho", dtype = "String" },
+]
+
+[[relations]]
+relation_id = "inventory"
+expected_relation_sha256 = "360c876c49a4b1198dacf76a60d98a322434dc76b8db8e68cfc7f0324588a705"
+source_id = "inventory_workbook"
+sheet_name = "TỔNG HỢP TỒN KHO"
+physical_shape = [3412, 15]
+logical_data_shape = [3409, 15]
+header_strategy = { kind = "grouped_rows", parent_row_index = 2, child_row_index = 3, source_row_offset = 1, parent_fill = "right", separator = " - ", raw_header_construction = "Forward-fill a merged parent header only across its blank child cells; join nonblank parent and child with the separator; retain a singleton parent header unchanged." }
+projection = [
+  { canonical_name = "warehouse_name", source_header = "Tên kho", dtype = "String" },
+  { canonical_name = "warehouse_code", source_header = "Mã kho", dtype = "String" },
+  { canonical_name = "item_code", source_header = "Mã hàng", dtype = "String" },
+  { canonical_name = "item_name", source_header = "Tên hàng", dtype = "String" },
+  { canonical_name = "unit", source_header = "ĐVT", dtype = "String" },
+  { canonical_name = "closing_quantity", source_header = "Cuối kỳ - Số lượng", dtype = "String" },
+  { canonical_name = "closing_value", source_header = "Cuối kỳ - Giá trị", dtype = "String" },
+  { canonical_name = "inventory_group", source_header = "Nhóm VTHH", dtype = "String" },
+  { canonical_name = "accounting_note", source_header = "KT note", dtype = "String" },
+]
+
+[[relations]]
+relation_id = "purchase_po"
+expected_relation_sha256 = "66879fe6a507db37613491ec26cf9bed203e83f27b4e67a19a2a1a1a9b066c31"
+source_id = "purchase_po_workbook"
+sheet_name = "LDL"
+physical_shape = [2627, 86]
+logical_data_shape = [2624, 86]
+header_strategy = { kind = "single_row", row_index = 2, blank_column_numbers_one_based = [1, 85, 86], distinguished_headers = [[60, "OF | AF\n"], [69, "OF | AF\n/mã"]] }
+projection = [
+  { canonical_name = "status", source_header = "TÌNH TRẠNG", dtype = "String" },
+  { canonical_name = "supplier", source_header = "NCC", dtype = "String" },
+  { canonical_name = "contract_number", source_header = "HỢP ĐỒNG", dtype = "String" },
+  { canonical_name = "purchase_order_number", source_header = "SỐ PO", dtype = "String" },
+  { canonical_name = "purchase_order_date", source_header = "NGÀY PO", dtype = "String" },
+  { canonical_name = "brand", source_header = "BRAND", dtype = "String" },
+  { canonical_name = "preorder_or_stock", source_header = "PRE-ORDER/STOCK", dtype = "String" },
+  { canonical_name = "sales_order_number", source_header = "SỐ DH", dtype = "String" },
+  { canonical_name = "customer_order_date", source_header = "NGÀY KHÁCH ĐẶT HÀNG", dtype = "String" },
+  { canonical_name = "delivery_date", source_header = "NGÀY GIAO HÀNG", dtype = "String" },
+  { canonical_name = "misa_code", source_header = "MÃ MISA", dtype = "String" },
+  { canonical_name = "product_name", source_header = "TÊN HÀNG HÓA", dtype = "String" },
+  { canonical_name = "quantity", source_header = "SL", dtype = "String" },
+  { canonical_name = "currency", source_header = "NGOẠI TỆ", dtype = "String" },
+  { canonical_name = "net_contract_value", source_header = "GIÁ TRỊ NET/HỢP ĐỒNG", dtype = "String" },
+  { canonical_name = "warehouse", source_header = "KHO", dtype = "String" },
+  { canonical_name = "warehouse_receipt_date", source_header = "NGÀY NHẬP KHO", dtype = "String" },
+  { canonical_name = "lot_number", source_header = "Số lô", dtype = "String" },
+  { canonical_name = "total_transport_cost", source_header = "TOTAL COST\nVận chuyển", dtype = "String" },
+  { canonical_name = "warehouse_receipt_price_excluding_vat", source_header = "Giá nhập kho (chưa VAT)", dtype = "String" },
+  { canonical_name = "warehouse_receipt_value_by_quantity", source_header = "Giá trị nhập kho (theo SL)", dtype = "String" },
+  { canonical_name = "maximum_cost_by_misa_code", source_header = "Giá vốn max theo mã misa", dtype = "String" },
+]
+
+[[relations]]
+relation_id = "target"
+expected_relation_sha256 = "a7cd06aa3bffda0878a05130e93e0ff316d00784655c5f9b6e2f645d4bf74815"
+source_id = "target_workbook"
+sheet_name = "Target"
+physical_shape = [20, 9]
+logical_data_shape = [19, 9]
+header_strategy = { kind = "single_row", row_index = 0 }
+projection = [
+  { canonical_name = "source_row_number", source_header = "NO.", dtype = "String" },
+  { canonical_name = "brand", source_header = "BRAND", dtype = "String" },
+  { canonical_name = "brand_code", source_header = "BRAND CODE", dtype = "String" },
+  { canonical_name = "main_showroom", source_header = "MAIN SHOWROOM", dtype = "String" },
+  { canonical_name = "internal_target_value_2026", source_header = "Internal Target value\n2026", dtype = "String" },
+]

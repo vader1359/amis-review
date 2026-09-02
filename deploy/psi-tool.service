@@ -1,0 +1,11 @@
+[Unit]
+Description=PSI Shared Tool
+After=network-online.target
+[Service]
+Type=simple
+WorkingDirectory=/home/iant1359/develop/amis-review-psi-mvp
+EnvironmentFile=/home/iant1359/develop/amis-review-psi-mvp/.env
+ExecStart=/home/iant1359/develop/amis-review-psi-mvp/.venv/bin/uvicorn web.server:app --host 0.0.0.0 --port 8787
+Restart=on-failure
+[Install]
+WantedBy=multi-user.target

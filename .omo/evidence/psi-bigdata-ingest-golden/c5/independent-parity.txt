@@ -1,0 +1,6 @@
+Surface: independent stdlib JSON parser and PyArrow readback after a real CLI cold run.
+Invocation: `uv run python <independent checker> <external>/run`.
+JSON parse: PASS; relation_count 7; schema_shape_pairs 7; independently recomputed semantic SHA-256 `c7a7f8c4878b0ae96fb8b1cf5a28151d097902b9cdd4b42d45da455881424fd2`; matches report: true.
+PyArrow: files 7; ordered schema/shape parity true; all-string parity true (`string`/`large_string` accepted); checks 7/7.
+Boundary executable tests: `uv run pytest tests/psi_tool/test_ingest.py -q -k relation_hash` -> exit 0, 2 passed, 3 deselected.
+Repeated fresh-run determinism: two independent cold invocations -> exits 0/0; semantic_equal true; relation_hashes_equal true; cache_keys_equal true; ordered_ids_equal true.

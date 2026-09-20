@@ -1,0 +1,2 @@
+Invocation: uv run pytest tests/psi_tool -q
+Observable: 27 passed in 226.31s (0:03:46); exit 0.

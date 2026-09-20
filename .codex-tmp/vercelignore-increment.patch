@@ -1,0 +1,17 @@
+diff --git a/.vercelignore b/.vercelignore
+index e844efd..282088a 100644
+--- a/.vercelignore
++++ b/.vercelignore
+@@ -5,7 +5,12 @@
+ .psi-qa-tmp/
+ .pytest_cache/
+ .codex-tmp/
++.next/
++.vercel/
+ __pycache__/
++node_modules/
++.env
++.env.*
+ docs/
+ input/
+ old_check/

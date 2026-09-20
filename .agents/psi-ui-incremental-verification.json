@@ -1,0 +1,34 @@
+{
+  "scope": "Incremental periodic-source uploads",
+  "tests": "8 passed",
+  "build": "PASS",
+  "browser_sequence": [
+    {
+      "upload": 1,
+      "total": 1,
+      "build_enabled": false
+    },
+    {
+      "upload": 2,
+      "total": 3,
+      "build_enabled": false
+    },
+    {
+      "upload": 1,
+      "total": 4,
+      "build_enabled": true
+    }
+  ],
+  "duplicate_extra_file": {
+    "total": 5,
+    "build_enabled": false,
+    "warning": true
+  },
+  "remove_duplicate": {
+    "total": 4,
+    "build_enabled": true,
+    "verification": "Browser DOM readback confirmed4rows, build enabled, duplicate warning absent; native click timed out, DOM button click used."
+  },
+  "database_write": false,
+  "commit": "c109458"
+}

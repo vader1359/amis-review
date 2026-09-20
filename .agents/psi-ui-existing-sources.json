@@ -1,0 +1,41 @@
+{
+  "crm": {
+    "filename": "CRM_Saleorder_03.09.2026_17.15.58_713.xlsx",
+    "hash_matches_accepted_run": true
+  },
+  "product": {
+    "filename": "CRM_Product_04.09.2026_14.20.30_206.xlsx",
+    "hash_matches_accepted_run": true
+  },
+  "revenue": {
+    "filename": "So_chi_tiet_ban_hang 03.09.xlsx",
+    "hash_matches_accepted_run": true
+  },
+  "inventory": {
+    "filename": "Tong_hop_ton_kho 03.09.xlsx",
+    "hash_matches_accepted_run": true
+  },
+  "purchase": {
+    "filename": "0_LOADING LIST DETAIL_New.xlsx",
+    "hash_matches_accepted_run": true
+  },
+  "target": {
+    "filename": "Target.xlsx",
+    "hash_matches_accepted_run": true
+  },
+  "manual_check": {
+    "filename": "PSI_Manual_Check.xlsx",
+    "hash_matches_accepted_run": true
+  },
+  "prior_psi": {
+    "filename": "PSI_Final_27.08.2026.xlsx",
+    "hash_matches_accepted_run": true,
+    "date": "2026-08-27"
+  },
+  "classifications": [
+    "crm",
+    "product",
+    "revenue",
+    "inventory"
+  ]
+}

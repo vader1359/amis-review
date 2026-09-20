@@ -1,0 +1,9 @@
+Surface: tmux CLI cold/warm public inspect command (paths redacted as <AUDIT_TMP>)
+Invocation: uv run --project <REPO> psi inspect --manifest <AUDIT_TMP>/workspace/tests/psi_tool/fixtures/golden_manifest.toml --output-dir <AUDIT_TMP>/cold-output
+Cold transcript:
+PASS report=inspect-report.json semantic_sha256=c7a7f8c4878b0ae96fb8b1cf5a28151d097902b9cdd4b42d45da455881424fd2
+EXIT_CODE=0
+Warm transcript:
+PASS report=inspect-report.json semantic_sha256=c7a7f8c4878b0ae96fb8b1cf5a28151d097902b9cdd4b42d45da455881424fd2
+EXIT_CODE=0
+Observed state: cold relation cache_hit flags all false; warm relation cache_hit flags all true.

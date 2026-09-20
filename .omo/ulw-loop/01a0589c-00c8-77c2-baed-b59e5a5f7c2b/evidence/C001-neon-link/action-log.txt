@@ -1,0 +1,7 @@
+2026-08-31T16:24Z BrowserOS Neo session renamed codex/neon-psi-setup.
+Opened task-owned Neon Console tab for organization org-calm-tree-69287331.
+Verified the only pre-existing project was ian-ticketfast (young-brook-52271267); no PSI project existed.
+Created one project named amis-review-psi in AWS Asia Pacific 1 (Singapore), PostgreSQL 18.
+Verified project dashboard URL ends with /projects/withered-fog-14675525 and branch production is visible.
+Captured BrowserOS page 11 as PDF and rendered its first page to browser.png; visual inspection shows amis-review-psi, MCP server onboarding, and production branch.
+Linked the repository using explicit org and project ids with --no-env-pull; no connection string was written.

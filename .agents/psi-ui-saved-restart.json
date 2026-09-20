@@ -1,0 +1,34 @@
+{
+  "status": "PASS",
+  "saved_sources": {
+    "purchase": {
+      "id": "92429acc0fe8436d32e361d21c5bb7de",
+      "filename": "0_LOADING LIST DETAIL_New.xlsx",
+      "sha256": "768081ce81192e00d80c47081ea1e697aba5dcb6cb4c45587ab1172ed0d63137",
+      "size": 2353994,
+      "stored_at": "2026-09-05T17:47:37.250301+00:00"
+    },
+    "target": {
+      "id": "299fdfdc826cb4bbab70de25ee977aef",
+      "filename": "Target.xlsx",
+      "sha256": "d55f701d64adba55ed9f057b110574b184d2d1a2e1353042c1313c99e8c60e3e",
+      "size": 5026,
+      "stored_at": "2026-09-05T17:47:37.260261+00:00"
+    },
+    "manual_check": {
+      "id": "a4c876836f1a84e779bc59758ff4811d",
+      "filename": "PSI_Manual_Check.xlsx",
+      "sha256": "fe78ab207f85b6af8e6af94c484e01048bf7eb08d9bca81861d668de788c6d2f",
+      "size": 116550,
+      "stored_at": "2026-09-05T17:47:37.397564+00:00"
+    },
+    "prior_psi": {
+      "id": "14ef4285a710525b366afc2f1ca7c212",
+      "filename": "PSI_Final_27.08.2026.xlsx",
+      "sha256": "63b1a8847c28ae6f281dfb8addc03a4d6779a36f6c61af7f6649c49c20a9fc1d",
+      "size": 3177487,
+      "stored_at": "2026-09-05T17:47:38.850804+00:00"
+    }
+  },
+  "server_pid": 15815
+}

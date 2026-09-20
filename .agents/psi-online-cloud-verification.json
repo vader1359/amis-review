@@ -1,0 +1,54 @@
+{
+  "commit": "08bffdb562597636426f3f4237f8b0637d3410c3",
+  "scope": "Non-compute PSI preview preparation ONLY; no Terraform apply or shared application deployment",
+  "observed_at": "2026-09-05T15:33:18.728421+00:00",
+  "source_hashes": {
+    "docs/PSI_CLOUD_SETUP.md": "0ceb98eb760b79d60824336e520f901bc932a05547d64c0b895284aa85e290d9",
+    "infra/terraform/preview/.gitignore": "f480bf4b737f538e1b22ebd21a06cbd2f047df00f7b9d095228eee1d0727bc69",
+    "infra/terraform/preview/.terraform.lock.hcl": "56d79b13db1a13bd3cb38de32983b822c5de3e98673bb66891c6b0924bacbef2",
+    "infra/terraform/preview/README.md": "8aef9a2a8dcfe019ffa2892cec51fc2d725020849c82a72e6c53d105afadc992",
+    "infra/terraform/preview/main.tf": "d7ff4c5d45bf5a9ec4660bf7ea054dc8b1ebdae054caac64237fe00a0a1001b0",
+    "infra/terraform/preview/outputs.tf": "bf6bc8b806e29d8e53ee632e3eaa3c36ab9c2cf303a63ff4708aca09b22c4c34",
+    "infra/terraform/preview/tests/foundation.tftest.hcl": "3a3b426d7babae4bb9c45d752bba85aabfd0363129c003c737529d9a3bcd891b",
+    "infra/terraform/preview/tests/policy.tftest.hcl": "cd2638e6865b2e9ea3115b2e968998802fbdd3da1a85ae959695cfec6aff0c26",
+    "infra/terraform/preview/variables.tf": "2cc0d6af9e1c34c7f88ce3979344d9494dc83bf74c6a5859a4dc53ec57d7787d",
+    "infra/terraform/preview/versions.tf": "cb627712afa5d10948230873526830d1d32e8d958b87ca594e978a263aa24ee0",
+    "tests/psi_tool/test_cloud_bootstrap_policy.py": "c0b5964031cdf98fb5561cab2b25c79f294538a0c45fb10dc7515e8abbb28344"
+  },
+  "verification": {
+    "post_commit_pytest_wrapper": {
+      "status": "PASS",
+      "count": 1,
+      "seconds": 7.92,
+      "includes": [
+        "locked-provider init backend=false",
+        "Terraform validate",
+        "12 native mock tests",
+        "mock-plan resource allowlist"
+      ]
+    },
+    "terraform_fmt": "PASS",
+    "new_test_full_ruff": "PASS",
+    "tracked_tree_clean": "PASS",
+    "staged_whitespace": "PASS"
+  },
+  "independent_review": {
+    "agent": "cloud_iac_review",
+    "verdict": "CLEAR / APPROVE FOR PREPARATION ONLY",
+    "test": "independent wrapper 1 passed in 8.50s",
+    "resolved_finding": "Exact per-bucket lifecycle TTL assertion now staging7/artifacts30"
+  },
+  "cloud_mutations": [
+    "Created project amis-psi-preview-20260905, verified number803385681218 in Chrome"
+  ],
+  "cloud_apply": false,
+  "billing": "Both existing accounts Closed; paid activation authorization pending",
+  "remaining": [
+    "Active authorized Billing",
+    "Reviewed state backend/recovery and guarded apply wrappers",
+    "CMEK lifecycle and grants",
+    "Full bootstrap controls and isolated Neon",
+    "Shared application implementation and Power BI",
+    "Live provider acceptance and separately authorized production cutover"
+  ]
+}

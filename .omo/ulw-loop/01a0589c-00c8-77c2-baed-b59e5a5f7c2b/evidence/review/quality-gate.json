@@ -1,0 +1,120 @@
+{
+  "codeReview": {
+    "by": "lazycodex-code-reviewer",
+    "recommendation": "APPROVE",
+    "codeQualityStatus": "CLEAR",
+    "reportPath": ".omo/evidence/ulw/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/G001-continue-the-recovered-prior-task-fo/a0/G001-continue-the-recovered-prior-task-fo-code-review.md",
+    "evidence": "Configuration, OAuth, project/link consistency, secret safety, dirty-state preservation, and cleanup passed at the exact reviewed SHA/tree.",
+    "blockers": []
+  },
+  "manualQa": {
+    "by": "lazycodex-qa-executor",
+    "status": "passed",
+    "evidence": "C001-C003 and six adversarial cases passed using BrowserOS evidence plus fresh read-only CLI/config checks and the successful live OAuth MCP receipt.",
+    "surfaceEvidence": [
+      {
+        "id": "surface-browser-project",
+        "criterionRef": "C001",
+        "surface": "browser",
+        "invocation": "BrowserOS Neo project dashboard capture and visual inspection",
+        "verdict": "passed",
+        "artifactRefs": ["artifact-browser"]
+      },
+      {
+        "id": "surface-cli-mcp",
+        "criterionRef": "C002",
+        "surface": "cli",
+        "invocation": "codex mcp list; codex mcp get Neon; fresh Neon.describe_project evidence review",
+        "verdict": "passed",
+        "artifactRefs": ["artifact-qa-cli"]
+      },
+      {
+        "id": "surface-data-preservation",
+        "criterionRef": "C003",
+        "surface": "data",
+        "invocation": "compare git-status-before.txt with git-status-after.txt and run jq/credential scan",
+        "verdict": "passed",
+        "artifactRefs": ["artifact-git-diff"]
+      }
+    ],
+    "adversarialCases": [
+      {
+        "id": "adv-duplicate-project",
+        "criterionRef": "C001/C002",
+        "scenario": "Wrong project or duplicate PSI project",
+        "expectedBehavior": "Exactly one amis-review-psi project exists and all surfaces use its id.",
+        "verdict": "passed",
+        "artifactRefs": ["artifact-qa-cli"]
+      },
+      {
+        "id": "adv-auth-regression",
+        "criterionRef": "C002",
+        "scenario": "Bearer or write-capable MCP configuration persists",
+        "expectedBehavior": "OAuth remains enabled at the project-scoped readonly URL with no HTTP authorization header.",
+        "verdict": "passed",
+        "artifactRefs": ["artifact-qa-cli"]
+      },
+      {
+        "id": "adv-secret-dirty-state",
+        "criterionRef": "C003",
+        "scenario": "Credential leakage or dirty-worktree clobbering",
+        "expectedBehavior": "No repository credential match and the baseline tracked dirty set is preserved.",
+        "verdict": "passed",
+        "artifactRefs": ["artifact-git-diff", "artifact-qa-cli"]
+      }
+    ],
+    "artifactRefs": [
+      {
+        "id": "artifact-browser",
+        "kind": "screenshot",
+        "description": "BrowserOS Neo dashboard visibly showing amis-review-psi and production branch.",
+        "path": ".omo/evidence/ulw/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/G001-continue-the-recovered-prior-task-fo/a0/browser.png"
+      },
+      {
+        "id": "artifact-qa-cli",
+        "kind": "cli-transcript",
+        "description": "Canonical QA receipt linking the detailed CLI/MCP and adversarial verification report.",
+        "path": ".omo/evidence/ulw/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/G001-continue-the-recovered-prior-task-fo/a0/G001-continue-the-recovered-prior-task-fo-manual-qa.md"
+      },
+      {
+        "id": "artifact-git-diff",
+        "kind": "data-diff",
+        "description": "Baseline and final tracked dirty-set comparison.",
+        "path": ".omo/evidence/ulw/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/G001-continue-the-recovered-prior-task-fo/a0/git-status-diff.txt"
+      }
+    ]
+  },
+  "gateReview": {
+    "by": "lazycodex-gate-reviewer",
+    "recommendation": "APPROVE",
+    "reportPath": ".omo/evidence/ulw/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/G001-continue-the-recovered-prior-task-fo/a0/G001-continue-the-recovered-prior-task-fo-gate-review.md",
+    "evidence": "Independent gate approved all C001-C003 evidence and explicitly disposed both non-blocking review notes at the exact SHA/tree.",
+    "blockers": []
+  },
+  "iteration": {
+    "fullRerun": true,
+    "status": "passed",
+    "rerunCommands": [
+      "codex mcp list",
+      "codex mcp get Neon",
+      "neon projects list --org-id org-calm-tree-69287331 --output json",
+      "jq structural validation and repository credential-pattern scan"
+    ],
+    "evidence": "Fresh CLI/config reproduction, live OAuth Neon.describe_project receipt, JSON parsing, screenshot inspection, and cleanup checks passed."
+  },
+  "criteriaCoverage": {
+    "totalCriteria": 3,
+    "passCount": 3,
+    "originalIntent": "Load and prove BrowserOS Neo, Neon CLI repository linkage, Neon project skills, and a live read-only Neon MCP for the PSI tool without disturbing existing work.",
+    "desiredOutcome": "BrowserOS, CLI, and MCP agree on one PSI project; OAuth read-only MCP works; no secret or dirty-state regression remains.",
+    "userOutcomeReview": "The project amis-review-psi is created once, linked on production, visible in BrowserOS, and readable through the enabled OAuth Neon MCP; all evidence and cleanup gates approved.",
+    "adversarialClassesCovered": [
+      "wrong_or_duplicate_project",
+      "stale_or_mismatched_link",
+      "mutation_or_auth_regression",
+      "credential_leakage",
+      "dirty_worktree_clobbering",
+      "cleanup_residue"
+    ]
+  }
+}

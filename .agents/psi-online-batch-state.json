@@ -1,0 +1,319 @@
+{
+  "version": 1,
+  "program": "psi-online-completion-20260905",
+  "worktree": "/Users/iant1359/Develop/amis-review",
+  "tmuxTarget": null,
+  "planPath": "/Users/iant1359/Develop/amis-review/.omo/plans/psi-neon-online.md",
+  "planChecksum": "sha256:69bea04330d97dc00b6261fa6dcbec76570ffae6663d2ec90e8d3c4da5bc2194",
+  "writerId": "root-multi-2",
+  "sessionId": "01a071d2-4670-7280-a9ce-8c0c1ef75fce",
+  "startedAt": "2026-09-05T13:53:39.053682+00:00",
+  "lastProgressAt": "2026-09-05T18:00:50.338309+00:00",
+  "lastContinuationAt": null,
+  "continuationNonce": "psi-online-20260905-1",
+  "currentTodo": "cloud",
+  "status": "idle",
+  "completed": [
+    "parity",
+    "integration",
+    "preview",
+    "review"
+  ],
+  "deferred": [],
+  "dependencies": {
+    "parity": [],
+    "integration": [
+      "parity"
+    ],
+    "preview": [
+      "integration"
+    ],
+    "review": [
+      "preview"
+    ],
+    "cloud": [
+      "review"
+    ]
+  },
+  "todoLedger": {
+    "parity": {
+      "scope": [
+        "portable engine",
+        "independent payload validator",
+        "portable 17-sheet renderer",
+        "independent workbook validator"
+      ],
+      "acceptanceCriteria": [
+        "No unsupported completion claims",
+        "All required gates pass"
+      ],
+      "targetedCommands": [],
+      "adversarialAssertions": [
+        "Missing baseline and failed validation block release"
+      ],
+      "expectedCommit": null,
+      "milestone": true,
+      "retryBudget": 3,
+      "timeboxMinutes": 60,
+      "commit": "8a98b79d99ee3fad14480889b386de5a7d8f83f5",
+      "status": "complete",
+      "evidence": ".agents/psi-online-final-verification.json"
+    },
+    "integration": {
+      "scope": [
+        "immutable uploaded source manifest",
+        "validation and Parquet gate orchestration"
+      ],
+      "acceptanceCriteria": [
+        "No unsupported completion claims",
+        "All required gates pass"
+      ],
+      "targetedCommands": [],
+      "adversarialAssertions": [
+        "Missing baseline and failed validation block release"
+      ],
+      "expectedCommit": null,
+      "milestone": true,
+      "retryBudget": 3,
+      "timeboxMinutes": 60,
+      "commit": "8a98b79d99ee3fad14480889b386de5a7d8f83f5",
+      "status": "complete",
+      "evidence": ".agents/psi-online-final-verification.json"
+    },
+    "preview": {
+      "scope": [
+        "working browser upload and evidence flow"
+      ],
+      "acceptanceCriteria": [
+        "No unsupported completion claims",
+        "All required gates pass"
+      ],
+      "targetedCommands": [],
+      "adversarialAssertions": [
+        "Missing baseline and failed validation block release"
+      ],
+      "expectedCommit": null,
+      "milestone": true,
+      "retryBudget": 3,
+      "timeboxMinutes": 60,
+      "commit": "8a98b79d99ee3fad14480889b386de5a7d8f83f5",
+      "status": "complete",
+      "evidence": ".agents/psi-online-final-verification.json"
+    },
+    "review": {
+      "scope": [
+        "independent code review",
+        "independent real-data QA"
+      ],
+      "acceptanceCriteria": [
+        "No unsupported completion claims",
+        "All required gates pass"
+      ],
+      "targetedCommands": [],
+      "adversarialAssertions": [
+        "Missing baseline and failed validation block release"
+      ],
+      "expectedCommit": null,
+      "milestone": true,
+      "retryBudget": 3,
+      "timeboxMinutes": 60,
+      "commit": "8a98b79d99ee3fad14480889b386de5a7d8f83f5",
+      "status": "complete",
+      "evidence": ".agents/psi-online-final-verification.json"
+    },
+    "cloud": {
+      "scope": [
+        "Neon Auth/Postgres",
+        "GCS",
+        "Cloud Run and Cloud Tasks",
+        "Power BI",
+        "preview and approved cutover"
+      ],
+      "acceptanceCriteria": [
+        "No unsupported completion claims",
+        "All required gates pass"
+      ],
+      "targetedCommands": [],
+      "adversarialAssertions": [
+        "Missing baseline and failed validation block release"
+      ],
+      "expectedCommit": null,
+      "milestone": true,
+      "retryBudget": 3,
+      "timeboxMinutes": 60
+    }
+  },
+  "milestones": [
+    {
+      "afterTodo": "integration",
+      "gate": "independent-real-data-parity-and-adversarial"
+    },
+    {
+      "afterTodo": "preview",
+      "gate": "browser-api-full-regression"
+    },
+    {
+      "beforeHandoffTodo": "cloud",
+      "gate": "independent-code-qa-review"
+    }
+  ],
+  "attempts": {
+    "todo": 1,
+    "targetedGate": 0
+  },
+  "maxAttempts": {
+    "todo": 3,
+    "targetedGate": 3
+  },
+  "childCommandActive": false,
+  "childPid": null,
+  "childJobId": null,
+  "testStack": {
+    "name": "psi-online-local-preview",
+    "portNamespace": "18787",
+    "disposable": true
+  },
+  "authority": {
+    "noMerge": true,
+    "noPush": true,
+    "noDeploy": true,
+    "noLiveMigration": true,
+    "noProduction": true,
+    "noSecrets": true,
+    "noPII": true
+  },
+  "blockers": [
+    {
+      "classification": "external",
+      "detail": "GCP PSI preview created successfully; both existing billing accounts are Closed. Paid billing upgrade/reopening authorization is pending."
+    },
+    {
+      "classification": "infrastructure",
+      "detail": "Chrome CUA connection timed out three consecutive calls after billing account navigation; no further browser mutation performed."
+    }
+  ],
+  "infrastructureFollowUps": [
+    {
+      "owner": "root/user",
+      "risk": "Paid cloud services cannot start without active authorized Billing",
+      "evidence": ".agents/psi-online-cloud-discovery.json",
+      "nextAction": "Resolve paid Billing authorization/account status, then re-verify in Chrome and finish bootstrap prerequisites",
+      "blocking": true
+    }
+  ],
+  "nextAction": "UI refresh complete and local server ready. Shared cloud continuation still requires Billing authorization and remaining bootstrap prerequisites; do not infer Billing approval from UI request.",
+  "updatedAt": "2026-09-05T18:00:50.338309+00:00",
+  "workers": {
+    "portable_engine": {
+      "worktree": "/Users/iant1359/Develop/amis-review-online-engine",
+      "scope": [
+        "src/psi_tool/online_engine.py",
+        "src/psi_tool/_online_*prepare*",
+        "src/psi_tool/_online_validate.py",
+        "src/psi_tool/_online_manual_check.py",
+        "tests/psi_tool/test_online_engine.py"
+      ]
+    },
+    "portable_workbook": {
+      "worktree": "/Users/iant1359/Develop/amis-review-online-workbook",
+      "scope": [
+        "src/psi_tool/online_workbook.py",
+        "src/psi_tool/_online_workbook_schema.py",
+        "tests/psi_tool/test_online_workbook.py"
+      ]
+    }
+  },
+  "notes": [
+    "Original 41-todo plan unchanged; this session ledger tracks parity recovery milestones, not completion of original todos.",
+    "Source workbooks remain local and unmodified; no private data committed."
+  ],
+  "gates": {
+    "root_targeted": {
+      "status": "PASS",
+      "tests": 41
+    },
+    "workbook_agent": {
+      "status": "PASS",
+      "tests": 19,
+      "golden": "all cell values/formulas and governed structure"
+    },
+    "engine_agent": {
+      "status": "PASS",
+      "tests": 23,
+      "golden": "all payload keys equal; independent validation zero failures"
+    },
+    "root_static": {
+      "status": "PASS",
+      "scope": "Ruff E4/E7/E9/F/I; diff whitespace"
+    },
+    "independent_review": {
+      "status": "CLEAR / APPROVE",
+      "report": ".agents/psi-online-code-review.md"
+    },
+    "root_regression": {
+      "status": "PASS",
+      "tests": 128,
+      "scope": "tests/psi_tool with private03/09 golden"
+    },
+    "http_qa": {
+      "status": "PASS",
+      "report": ".agents/psi-online-qa.md",
+      "workbook_sha256": "c8bb2fac04f254aaf32aef04249df314297e68e182363bf5602a73bc2c98ac44"
+    },
+    "baseline_latest": {
+      "status": "PASS",
+      "tests": 20
+    }
+  },
+  "preview": {
+    "url": "http://127.0.0.1:18787",
+    "sessionId": 92062,
+    "publication": false,
+    "final_runtime_verified": true
+  },
+  "scopeRemaining": [
+    "Neon auth and persistent shared state",
+    "GCS/Cloud Run/Cloud Tasks",
+    "Final approval/publication",
+    "Power BI",
+    "live preview/restore/cutover gates"
+  ],
+  "latestCommit": "8a98b79d99ee3fad14480889b386de5a7d8f83f5",
+  "targetedGate": {
+    "status": "passed",
+    "evidence": [
+      ".agents/psi-online-final-verification.json"
+    ]
+  },
+  "milestoneGate": {
+    "required": true,
+    "status": "passed",
+    "scope": "local parity only"
+  },
+  "cloudContinuationAuthorization": {
+    "source": "User: T\u1ef1 l\u00ean google cloud trong chrome v\u00e0 l\u00e0m ti\u1ebfp",
+    "scope": "Chrome discovery and reversible isolated preview setup; prior authority flags apply to completed local milestone",
+    "productionCutover": false
+  },
+  "cloudProject": {
+    "id": "amis-psi-preview-20260905",
+    "number": "803385681218",
+    "environment": "preview"
+  },
+  "cloudPreparation": {
+    "commit": "08bffdb562597636426f3f4237f8b0637d3410c3",
+    "status": "complete_preparation_only",
+    "evidence": ".agents/psi-online-cloud-verification.json"
+  },
+  "uiRefresh": {
+    "status": "complete",
+    "commit": "e9afe8ba05db7367177a28aa98e33a058f664f18",
+    "evidence": ".agents/psi-ui-final-verification.json",
+    "user_requirements": [
+      "Ant Design throughout UI",
+      "Batch4periodicfiles with content classification",
+      "Retain controls",
+      "Retain comparison Final"
+    ]
+  }
+}

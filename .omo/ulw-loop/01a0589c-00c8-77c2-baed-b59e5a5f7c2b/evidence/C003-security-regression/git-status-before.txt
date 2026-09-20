@@ -1,0 +1,62 @@
+command: git status --porcelain=v1 --branch
+captured_at: 2026-08-31T16:22:45Z
+tree: 15263c5
+exit: 0
+
+## main...origin/main
+ M .gitignore
+ M README.md
+ M bao_cao_doi_soat_CRM_MISA_2026-07-05.xlsx
+ M input/CRM_Sale.xlsx
+ M scripts/build_audit_report.py
+?? .DS_Store
+?? .codex-release-fix.patch
+?? .codex-tmp/
+?? .env.example
+?? .omo/
+?? .sheet-runtime/
+?? .tmp/
+?? PSI_SAMPLE_INPUT/
+?? "Tong_hop_ton kho 22.07.xlsx"
+?? "Tong_hop_ton_kho 22.07.xlsx"
+?? build_clean_workbook.mjs
+?? build_clean_workbook.py
+?? build_psi_data.py
+?? build_psi_workbook.mjs
+?? deploy/
+?? docs/
+?? entities.json
+?? index.js
+?? input/.DS_Store
+?? "input/0_LOADING LIST DETAIL_New.xlsx"
+?? input/2026-08-19/
+?? input/CRM_Product_10.07.2026_08.32.37_482.xlsx
+?? input/CRM_Saleorder_06.07.2026_09.59.50_041.xlsx
+?? input/PSI_Manual_Check.xlsx
+?? "input/So_chi_tiet_ban_hang 01.01.2023 đến 09.07.26.xlsx"
+?? input/Target.xlsx
+?? "input/Tong_hop_ton_kho 21.07.xlsx"
+?? inspect_workbook.mjs
+?? inspect_workbooks.mjs
+?? main-B1osgIPb.js
+?? mempalace.yaml
+?? node_modules
+?? "old_check/Kế toán check_Xử lý ĐH pending 18.06 ver 3.1 (2).xlsx"
+?? psi_engine/
+?? pyproject.toml
+?? requirements.txt
+?? scripts/benchmark_xlsx_pipeline.py
+?? scripts/bootstrap_users.py
+?? scripts/inspect_psi.py
+?? scripts/migrate_preorder_fingerprints.py
+?? scripts/psi_payload_parquet.py
+?? scripts/run_wsl.sh
+?? scripts/validate_manual_check.py
+?? sidecar.js
+?? src/
+?? supabase/
+?? test/
+?? tests/
+?? uv.lock
+?? verify_clean_workbook.mjs
+?? web/

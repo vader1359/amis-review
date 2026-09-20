@@ -1,0 +1,13 @@
+Invocation: uv run pytest tests/psi_tool/test_ingest.py tests/psi_tool/test_cache_failures.py -q
+Observable: 14 passed in 156.40s.
+
+Coverage: real seven-source cold/warm, exact shapes/projections/dtypes, stable
+byte/semantic hashes, Polars readback, fresh warm-source validation, manifest
+hash drift, renamed header, corrupt/truncated and valid-content-tampered Parquet,
+key mismatch, unsafe output state, interrupted cleanup, and semantic boundaries.
+
+Focused repaired regression invocation:
+uv run pytest tests/psi_tool/test_cache_failures.py::test_warm_cache_revalidates_all_sources_before_hits -q
+Observable: 1 passed in 21.10s. Copied-source byte drift was rejected before a
+hit; all seven cache filenames, byte hashes, and mtimes remained identical and
+no sibling staging directory remained.

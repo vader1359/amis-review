@@ -1,0 +1,152 @@
+{
+  "review_summary": {
+    "mismatch_count": 1054,
+    "change_count": 125,
+    "new_preorder_count": 37,
+    "preorder_attention_count": 13
+  },
+  "rebuild_seconds": 84.12,
+  "new_report": {
+    "id": "9383ffce2a4c4323a0d640523400a90e",
+    "as_of": "2026-09-03",
+    "created_at": "2026-09-06T04:36:27.507637+00:00",
+    "state": "draft",
+    "input_hash": "3eea646245f4e75712044a091db6c2c1aeb1b13c35e837fb4d2ca837b1dd7cb0",
+    "workbook_sha256": "d64a8ff63ab5c123a8a6dfeca36e11640ca183fbe62e539839f7a11fbb31fd0b",
+    "summary": {
+      "cogs": 38697874912.0,
+      "net_revenue": 94411208412.0,
+      "revenue_rows": 8785,
+      "data_gap_rows": 5,
+      "inventory_qty": 55282.5,
+      "mismatch_rows": 1054,
+      "preorder_rows": 400,
+      "purchase_rows": 2605,
+      "inventory_rows": 3168,
+      "inventory_value": 41213045598.0,
+      "crm_final_orders": 2704,
+      "po_excluded_rows": 9,
+      "psi_product_rows": 4277,
+      "revenue_quantity": 54710.6,
+      "new_mismatch_rows": 4,
+      "crm_final_products": 8425,
+      "order_excluded_orders": 6,
+      "preorder_excluded_rows": 325
+    },
+    "gates": [
+      {
+        "check": "source_files_readable",
+        "notes": "All seven source/control files exist and are non-empty.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "manual_check_validator_pass",
+        "notes": "Registry loaded; 398 active preorder rows.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "prior_psi_baseline_found",
+        "notes": "PSI_Final_27.08.2026.xlsx",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "revenue_quantity_header_exact",
+        "notes": "Selected exact header T\u1ed5ng s\u1ed1 l\u01b0\u1ee3ng b\u00e1n.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "revenue_quantity_total_matches_rows",
+        "notes": "Quantity=54710.6.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "inventory_raw_positive_only",
+        "notes": "Retained 3168 positive warehouse-level rows; PSI by Product aggregates 2410 canonical SKUs.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "preorder_exclusion_no_leak",
+        "notes": "No active permanent key appears in open Pre-orders.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "preorder_excluded_rows_authorized",
+        "notes": "Every excluded output row matches an active permanent key.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "preorder_excluded_output_unique",
+        "notes": "Excluded output is unique by Order ID + canonical SKU.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "preorder_registry_set_semantics",
+        "notes": "Set semantics applied to 398 rows / 394 unique keys; duplicates are recorded as Data gaps.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "order_exclusion_no_leak",
+        "notes": "No approved whole-order exclusion appears in business outputs.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "mismatch_identity_unique",
+        "notes": "Mismatch output is unique by Source + trimmed Key + Issue.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "manual_check_duplicate_preorder_identities",
+        "notes": "Registry duplicates are surfaced in Data gaps; deterministic set semantics prevent duplicate exclusions.",
+        "actual": 2,
+        "status": "WARN",
+        "expected": 0
+      }
+    ],
+    "sheet_count": 17,
+    "storage": "neon",
+    "validation": {
+      "payload": "PASS",
+      "parquet": "PASS",
+      "workbook": "PASS"
+    },
+    "download_url": "/api/drafts/9383ffce2a4c4323a0d640523400a90e/download"
+  },
+  "retry": "PASS",
+  "scope_excluded": "PASS",
+  "billed_order_metric_deltas": {
+    "revenue_quantity": 1.0,
+    "net_revenue": 102251852.0,
+    "cogs": 34577329.0
+  },
+  "exact_revenue_quantity_cogs_delta": "PASS",
+  "carryforward_preorder_exclusions": "PASS",
+  "whole_order_absent_crm_revenue_preorder": "PASS",
+  "previous_report_immutable": "PASS",
+  "original_immutable": "PASS",
+  "download_sha": "PASS",
+  "proposal_revision_conflict": "PASS"
+}

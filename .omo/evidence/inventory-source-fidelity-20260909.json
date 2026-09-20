@@ -1,0 +1,27 @@
+{
+  "scenario": "Read-only per-SKU-warehouse reconciliation of the 19/08 raw inventory source to ZIP PSI and 27/08 raw source to PSI Final, using the current PSI eligibility and canonical-SKU rules.",
+  "invocation": "rtk proxy .venv/bin/python /Users/iant1359/.codex-multi-2/integrations/powerbi/zip-audit/audit_inventory_source_fidelity.py; assertions over zip-audit/deep-inventory-source.json",
+  "binary_observable": "PASS inventory-source-fidelity: 19/08 numeric totals equal with 11 identifier aliases; 27/08 has 3157 exact SKU-warehouse matches",
+  "result": {
+    "raw19_to_zip19": {
+      "retained_keys": 3161,
+      "quantity": 55510.5,
+      "value": 41338177365.0,
+      "numeric_difference_keys": 0,
+      "identifier_alias_pairs": 11
+    },
+    "raw27_to_final27": {
+      "exact_keys": 3157,
+      "quantity": 55329.5,
+      "value": 41399458718.0,
+      "numeric_difference_keys": 0,
+      "raw_only_keys": 0,
+      "output_only_keys": 0
+    }
+  },
+  "artifacts": [
+    "/Users/iant1359/.codex-multi-2/integrations/powerbi/zip-audit/deep-inventory-source.md",
+    "/Users/iant1359/.codex-multi-2/integrations/powerbi/zip-audit/deep-inventory-source.json",
+    "/Users/iant1359/.codex-multi-2/integrations/powerbi/zip-audit/audit_inventory_source_fidelity.py"
+  ]
+}

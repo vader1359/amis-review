@@ -1,0 +1,9 @@
+RED
+Invocation: uv run pytest tests/psi_tool/test_ingest.py -q
+Observable: 1 failed, 4 passed, 2 errors in 109.71s.
+Cause: warm readback rejected the first relation because the initial IPC-byte digest changed across equivalent Parquet physical encodings and Polars exposed an extra ARROW:schema metadata key.
+
+GREEN
+Invocation: uv run pytest tests/psi_tool/test_ingest.py -q
+Observable: 12 passed in 20.53s.
+Resolution: versioned logical string codec with explicit length prefixes, null bitmap, fixed UTF-8/CSV boundaries; cache validation compares only the psi.* integrity namespace.

@@ -1,0 +1,50 @@
+{
+  "recorded_at": "2026-09-05T14:44:40.781052+00:00",
+  "commit": "8a98b79d99ee3fad14480889b386de5a7d8f83f5",
+  "scope": "local browser acceptance preview only",
+  "full_regression": {
+    "command": "rtk proxy env PSI_GOLDEN_DIR=<private golden directory> uv run --extra online python -m pytest -q tests/psi_tool",
+    "tool_session": 26201,
+    "result": "128 passed in 146.31s (0:02:26)"
+  },
+  "targeted": {
+    "tool_session": 20739,
+    "result": "48 passed in 3.37s"
+  },
+  "static": {
+    "result": "PASS",
+    "scope": "Ruff E4/E7/E9/F/I; git diff whitespace"
+  },
+  "review": {
+    "verdict": "CLEAR / APPROVE",
+    "report": ".agents/psi-online-code-review.md"
+  },
+  "qa": {
+    "verdict": "PASS",
+    "report": ".agents/psi-online-qa.md"
+  },
+  "final_http": {
+    "status": "PASS",
+    "final_running_process": "governance guards enabled",
+    "actual_http_download": true,
+    "workbook_sha256": "c8bb2fac04f254aaf32aef04249df314297e68e182363bf5602a73bc2c98ac44",
+    "bytes": 2396862,
+    "elapsed_seconds": 38.9,
+    "download_url": "/api/drafts/229d96a9f14781d954cdd6ce6d19d14e/download"
+  },
+  "final_governance": {
+    "status": "PASS",
+    "governance_guards": "expiry and evidence requirements enabled",
+    "elapsed_seconds": 38.85,
+    "workbook_sha256": "c8bb2fac04f254aaf32aef04249df314297e68e182363bf5602a73bc2c98ac44",
+    "matches_independent_browser_download": true,
+    "source_hashes_match_golden": true
+  },
+  "limitations": [
+    "Full Ruff ALL style gate is not clean for migrated procedural code/preview/tests.",
+    "Unchanged legacy test/test_manual_check.py has one fixed-count failure against evolved private input; 5 other tests pass.",
+    "Cloud deployment, shared authentication/state, Final approval and Power BI remain unimplemented."
+  ],
+  "sources_preserved": true,
+  "push_or_deploy": false
+}

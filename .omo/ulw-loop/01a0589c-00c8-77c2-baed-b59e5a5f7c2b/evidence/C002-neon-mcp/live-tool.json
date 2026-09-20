@@ -1,0 +1,18 @@
+{
+  "verified_at": "2026-08-31T16:41:27Z",
+  "process": "fresh ephemeral codex exec",
+  "server": "Neon",
+  "tool": "describe_project",
+  "arguments": {},
+  "status": "completed",
+  "success": true,
+  "auth_mode": "OAuth",
+  "project_id": "withered-fog-14675525",
+  "project_name": "amis-review-psi",
+  "region_id": "aws-ap-southeast-1",
+  "pg_version": 18,
+  "mutation_performed": false,
+  "credentials_recorded_in_repository": false,
+  "temporary_api_key_revoked": true,
+  "temporary_api_key_id": 3299882
+}

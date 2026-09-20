@@ -1,0 +1,21 @@
+{
+  "verified_at": "2026-08-31T16:37:00Z",
+  "org_id": "org-calm-tree-69287331",
+  "project_count": 2,
+  "psi_project_count": 1,
+  "projects": [
+    {
+      "id": "withered-fog-14675525",
+      "name": "amis-review-psi",
+      "region_id": "aws-ap-southeast-1",
+      "pg_version": 18
+    },
+    {
+      "id": "young-brook-52271267",
+      "name": "ian-ticketfast",
+      "region_id": "aws-ap-southeast-1",
+      "pg_version": 17,
+      "pre_existing_unmodified": true
+    }
+  ]
+}

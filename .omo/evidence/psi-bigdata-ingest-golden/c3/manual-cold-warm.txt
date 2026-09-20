@@ -1,0 +1,10 @@
+Invocation: uv run python -c <redacted cold/warm metadata driver>
+Cache root: .tmp/psi-c3-final-manual-2 (workspace-relative temporary path)
+Observable: {'cold_misses': 7, 'warm_hits': 7, 'stable_metadata': True,
+'no_rewrites': True, 'source_hashes_unchanged': True,
+'source_hashes_match_manifest': True, 'parquet_files': 7, 'temp_leaks': 0}
+Exit: 0
+
+The driver compared all frozen stable metadata and all seven st_mtime_ns values.
+It calculated six source SHA-256 values before and after without retaining source
+paths or row values.

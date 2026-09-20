@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "commit": "e9afe8ba05db7367177a28aa98e33a058f664f18",
+  "browser_page": 92,
+  "date": "2026-09-03",
+  "periodic_files_uploaded_together": 4,
+  "reused_files": 4,
+  "generation_seconds": 36.383,
+  "download_status": 200,
+  "download_url": "/api/drafts/6e38e51958a8d6c557790caa6f9ba30b/download",
+  "bytes": 2396862,
+  "sha256": "c8bb2fac04f254aaf32aef04249df314297e68e182363bf5602a73bc2c98ac44",
+  "identical_to_accepted_offline_parity_export": true,
+  "sheets": 17,
+  "saved_refs_unchanged_after_build": true
+}

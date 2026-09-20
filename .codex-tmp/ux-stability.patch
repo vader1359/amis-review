@@ -1,0 +1,113 @@
+diff --git a/psi_engine/persistence.py b/psi_engine/persistence.py
+index a8a110d..faf9ddb 100644
+--- a/psi_engine/persistence.py
++++ b/psi_engine/persistence.py
+@@ -326,7 +326,7 @@ class PsiMemoryStore:
+                 continue
+             source, filename, sheet, row_number, code, description, message = issue[:7]
+             source_type = source_types.get(str(source), request.source_type)
+-            identity = json.dumps({"source_type": source_type, "sheet": sheet, "row": row_number, "code": code, "description": description, "issue": message}, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
++            identity = json.dumps({"source_type": source_type, "sheet": sheet, "record_key": code or description, "issue": message}, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+             issue_fingerprint = sha256((request.reporting_period + identity).encode()).hexdigest()
+             if issue_fingerprint in existing_fingerprints:
+                 continue
+diff --git a/tests/test_psi_persistence.py b/tests/test_psi_persistence.py
+index 28f2ee0..bce138b 100644
+--- a/tests/test_psi_persistence.py
++++ b/tests/test_psi_persistence.py
+@@ -176,7 +176,12 @@ def test_new_mismatch_has_exact_location_and_handled_fingerprint_is_suppressed()
+     repository.transition_mismatch(mismatch_id, "assigned", "", {}, "user-a")
+     repository.transition_mismatch(mismatch_id, "in_progress", "", {}, "user-a")
+     repository.transition_mismatch(mismatch_id, "known", "verified", {"source": "test"}, "user-a")
+-    store.persist(request)
++    workbook = load_workbook(io.BytesIO(request.content))
++    workbook.active.insert_rows(5)
++    shifted = io.BytesIO()
++    workbook.save(shifted)
++    workbook.close()
++    store.persist(server.UploadRequest("team-a", "user-a", "2026-07", "2026-07-05", "revenue", "so_chi_tiet_revenue_fixture.xlsx", shifted.getvalue()))
+     assert len(repository.rows("mismatches")) == 1
+     assert repository.rows("mismatches")[0]["status"] == "known"
+ 
+diff --git a/web/app.js b/web/app.js
+index 912e805..0a8c4b0 100644
+--- a/web/app.js
++++ b/web/app.js
+@@ -7,7 +7,6 @@ const message = document.querySelector('#message');
+ const ready = document.querySelector('#ready');
+ const download = document.querySelector('#download');
+ const diagnostics = document.querySelector('#diagnostics');
+-const generateButton = document.querySelector('#generate');
+ const releaseButton = document.querySelector('#release');
+ const loginCard = document.querySelector('#login-card');
+ const workspace = document.querySelector('#workspace');
+@@ -37,11 +36,11 @@ async function refresh() {
+   checklist.innerHTML = owned.map(source => { const label = files[source] || source; const item = status.files?.[source] || { status: 'missing' }; return `<div class="check-item"><div><strong>${label}</strong><small>${item.status === 'uploaded' ? `Đã nộp · phiên bản ${item.version}` : 'Chưa có file'}</small></div><label class="ant-btn ant-btn-default">${item.status === 'uploaded' ? 'Tải lại' : 'Chọn file'}<input type="file" accept=".xlsx" data-source="${source}" hidden></label></div>`; }).join('');
+   const isReady = Boolean(status.ready);
+   const mismatches = Array.isArray(status.mismatches) ? status.mismatches : [];
++  const gateReasons = Array.isArray(status.gate_reasons) ? status.gate_reasons : [];
+   const releaseAllowed = status.release_allowed === undefined ? isReady && mismatches.length === 0 : Boolean(status.release_allowed);
+-  ready.textContent = releaseAllowed ? 'PSI sẵn sàng' : isReady ? 'Cần xử lý mismatch' : 'Chưa đủ file';
++  ready.textContent = releaseAllowed ? 'PSI sẵn sàng' : !isReady ? 'Chưa đủ file' : mismatches.length ? 'Cần xử lý mismatch' : 'Chưa đạt điều kiện xuất';
+   ready.className = `badge ${releaseAllowed ? '' : 'quiet'}`;
+-  message.textContent = !isReady ? `Cần đủ ${owned.length || 7} file nguồn để tạo PSI Final.` : mismatches.length ? `Còn ${mismatches.length} mismatch phải xử lý trước khi xuất PSI.` : 'Đã đủ file và không còn mismatch mở. Có thể tạo PSI Final.';
+-  generateButton.disabled = !releaseAllowed;
++  message.textContent = !isReady ? `Cần đủ ${owned.length || 7} file nguồn để tạo PSI Final.` : mismatches.length ? `Còn ${mismatches.length} mismatch phải xử lý trước khi xuất PSI.` : gateReasons.length ? gateReasons.join('. ') : 'Đã đủ file và không còn mismatch mở. Có thể tạo PSI Final.';
+   releaseButton.disabled = !releaseAllowed;
+   download.classList.toggle('hidden', !status.download_url);
+   download.href = status.download_url || '#';
+@@ -52,9 +51,8 @@ async function refresh() {
+ async function upload(source, file) { if (!file) return; message.textContent = `Đang tải ${files[source] || source}...`; const response = await api('/api/weekly-upload', { method: 'POST', body: formData(source, file) }); message.textContent = response.ok ? 'Đã lưu phiên bản file.' : await response.text(); await refresh(); }
+ async function resolveMismatch(mismatchId, toStatus) { message.textContent = 'Đang cập nhật mismatch...'; const response = await api('/api/mismatch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mismatch_id: mismatchId, to_status: toStatus, comment: 'Đã kiểm tra trên PSI shared tool', evidence: { source: 'web' } }) }); message.textContent = response.ok ? 'Đã cập nhật mismatch.' : await response.text(); await refresh(); }
+ async function release() { message.textContent = 'Đang tạo PSI Final...'; const response = await api('/api/release', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reporting_period: week.value }) }); if (!response.ok) { message.textContent = await response.text(); return; } const record = await response.json(); message.textContent = 'Đã tạo PSI Final. Link tải có hiệu lực trong 5 phút.'; if (record.signed_url) { download.href = record.signed_url; download.classList.remove('hidden'); } }
+-async function generate() { await release(); }
+ 
+ document.querySelector('#login-form').addEventListener('submit', async event => { event.preventDefault(); const email = document.querySelector('#login-email').value; const password = document.querySelector('#login-password').value; document.querySelector('#login-message').textContent = 'Đang đăng nhập...'; try { await login(email, password); document.querySelector('#login-message').textContent = ''; } catch (error) { document.querySelector('#login-message').textContent = error instanceof Error ? error.message : 'Đăng nhập thất bại.'; } });
+ document.querySelector('#logout').addEventListener('click', async () => { if (supabaseClient) await supabaseClient.auth.signOut(); accessToken = ''; showAuth(false); });
+-team.addEventListener('change', refresh); week.addEventListener('change', refresh); document.querySelector('#refresh').addEventListener('click', refresh); document.querySelector('#generate').addEventListener('click', generate); document.querySelector('#release').addEventListener('click', release);
++team.addEventListener('change', refresh); week.addEventListener('change', refresh); document.querySelector('#refresh').addEventListener('click', refresh); document.querySelector('#release').addEventListener('click', release);
+ (async () => { const config = await loadConfig(); if (config && window.supabase?.createClient) supabaseClient = window.supabase.createClient(config.url, config.publishable_key); if (supabaseClient) { const session = await supabaseClient.auth.getSession(); accessToken = session.data.session?.access_token || ''; } else { const preview = await fetch('/api/local-preview-session?role=contributor'); if (preview.ok) accessToken = (await preview.json()).token; } showAuth(Boolean(accessToken)); if (accessToken) await refresh(); })();
+diff --git a/web/index.html b/web/index.html
+index 57ce37f..7145b5b 100644
+--- a/web/index.html
++++ b/web/index.html
+@@ -44,7 +44,7 @@
+         <div id="checklist" class="checklist"></div>
+       </section>
+       <section class="ant-card card result-card">
+-        <div class="section-heading"><div><p class="eyebrow">03 / PSI FINAL</p><h2>Kết quả tuần</h2></div><div class="actions"><button id="generate" class="ant-btn ant-btn-primary" type="button">Generate PSI</button><button id="release" class="ant-btn ant-btn-default" type="button">Release</button></div></div>
++        <div class="section-heading"><div><p class="eyebrow">03 / PSI FINAL</p><h2>Kết quả tháng</h2></div><div class="actions"><button id="release" class="ant-btn ant-btn-primary" type="button">Xuất PSI Final</button></div></div>
+         <p id="message" class="hint" role="status" aria-live="polite">Đang kiểm tra checklist.</p>
+         <div id="diagnostics" class="hint" aria-live="polite"></div>
+         <a id="download" class="ant-btn ant-btn-primary hidden" download>Tải PSI Final</a>
+diff --git a/web/weekly_routes.py b/web/weekly_routes.py
+index 3fd94da..3eaea4d 100644
+--- a/web/weekly_routes.py
++++ b/web/weekly_routes.py
+@@ -6,6 +6,8 @@ from urllib.error import HTTPError
+ from email.policy import default
+ from urllib.parse import parse_qs, urlsplit
+ 
++from psi_engine.release import ReleaseRequest
++from psi_engine.release_adapter import storage_signed_download
+ from psi_engine.persistence import (
+     PsiMemoryRepository,
+     REQUIRED_SOURCES,
+@@ -70,7 +72,16 @@ class WeeklyRoutesMixin:
+                         "description": details.get("description", ""), "issue": details.get("issue", ""),
+                     })
+                 sources_ready = len(latest) == len(REQUIRED_SOURCES)
+-                payload = {"team_id": team_id, "week": period_key, "files": files, "owned_sources": list(REQUIRED_SOURCES), "ready": sources_ready, "release_allowed": sources_ready and not detailed_mismatches, "mismatches": detailed_mismatches}
++                gate = self.release_service.inspect_gate(ReleaseRequest(period_key, actor_id, team_id), token)
++                releases = self.store.repository.lookup("psi_releases", {"reporting_period_id": period_id}, token)
++                latest_release = max(releases, key=lambda row: str(row.get("created_at", "")), default=None)
++                download_url = storage_signed_download(self.store.repository, "psi-release", str(latest_release["object_path"]), 300, token) if latest_release else None
++                payload = {
++                    "team_id": team_id, "week": period_key, "files": files,
++                    "owned_sources": list(REQUIRED_SOURCES), "ready": sources_ready,
++                    "release_allowed": gate.allowed, "gate_reasons": list(gate.messages),
++                    "mismatches": detailed_mismatches, "download_url": download_url,
++                }
+             except KeyError as error:
+                 self.send(400, ("required query parameter is missing: " + str(error)).encode(), "text/plain")
+                 return

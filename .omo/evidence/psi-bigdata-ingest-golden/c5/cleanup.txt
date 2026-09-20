@@ -1,0 +1,6 @@
+All QA external roots were allocated below `/tmp` with `mktemp -d`, then removed by explicit-root cleanup. Rechecks found zero `/tmp/psi-c5-*` directories after cleanup. No product source, manifest, database, web, git, or unrelated dirty file was written by the QA lane.
+Source SHA-256 readback before/after: unchanged for all six manifest sources.
+Source hash identities independently rechecked (all before=after): CRM `d3c7ddb0835d3ec12c52d50a34e96ca57f5a5126f2d531cc35173213e0fe3c4d`; Product `d665711e28e588375c57e1d2088ad89857bb472e8a6b03529591ddc81d3ab156`; Sales Detail `1ec89484a30fa5caae2217444daf601ba68ed944afa693666285315b414e53b8`; Inventory `0d79817a63b60b228881672728207b680158fff55f633b83c3322de06eb47417`; Purchase `768081ce81192e00d80c47081ea1e697aba5dcb6cb4c45587ab1172ed0d63137`; Target `d55f701d64adba55ed9f057b110574b184d2d1a2e1353042c1313c99e8c60e3e`.
+Product snapshot digest before: `f2c1a3257c2d3c61205ae213d9f26a40b7a111daeb77667a5fe28eab5497e6af`.
+Product snapshot digest after:  `f2c1a3257c2d3c61205ae213d9f26a40b7a111daeb77667a5fe28eab5497e6af`.
+HEAD before/after: `3e686be94834e343e3018bce1ddc69d20fa5957d`.

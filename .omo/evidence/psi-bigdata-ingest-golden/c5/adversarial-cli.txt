@@ -1,0 +1,19 @@
+Surface: real `uv run psi inspect` subprocesses against isolated external temp roots; all roots removed after each case. Output is redacted.
+
+- P1-01 malformed manifest: exit 1; no run root; no leak.
+- P1-02 hash-drift manifest: exit 1; no run root.
+- P1-03 missing source in copied workspace: exit 1; no output root.
+- P1-04 copied-workspace source drift after cold: cold 0, warm 1; report overall FAIL; cache remains present; no leak.
+- P1-05 renamed projected header with matching changed source hash: exit 1; no report; no cache; header mutation confirmed; no leak.
+- P1-06 truncated warm Parquet: cold 0, warm 1; report overall FAIL; no temp residue.
+- P1-07 valid-content metadata-tampered Parquet: cold 0, warm 1; report overall FAIL.
+- P1-08 regular-file output: exit 1; sentinel unchanged; no leak.
+- P1-09 output symlink: exit 1; target entries 0; no target mutation.
+- P1-10 traversal output: exit 1; normalized run absent.
+- P1-11 foreign output: exit 1; report absent; cache absent.
+- ADV-01 cache-root symlink: cold 0, warm 1; target entries 0; no leak.
+- ADV-02 report symlink: cold 0, warm 1; outside target unchanged.
+- ADV-04 incomplete cache: exit 1; no report.
+- ADV-05 extra cache file: cold 0, warm 1; report exists with FAIL.
+- ADV-07 source path traversal in manifest: exit 1; no run root.
+- P2-05 missing option / extra argument: exits 2/2; no traceback/path leak.

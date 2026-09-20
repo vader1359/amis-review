@@ -1,0 +1,73 @@
+diff --git a/.codex-tmp/release-fix/current2/psi_engine/release_adapter.py b/.codex-tmp/release-fix/modified/psi_engine/release_adapter.py
+index 788864c..ba5c80a 100644
+--- a/.codex-tmp/release-fix/current2/psi_engine/release_adapter.py
++++ b/.codex-tmp/release-fix/modified/psi_engine/release_adapter.py
+@@ -2,6 +2,7 @@ from __future__ import annotations
+ 
+ import json
+ from typing import Protocol
++from urllib.parse import quote
+ from urllib.request import Request, urlopen
+ 
+ from .persistence import UploadAuthorizationError, UploadValidationError
+@@ -16,7 +17,8 @@ def storage_upload(repository: ReleaseStorage, bucket: str, path: str, content:
+     bearer = repository.key
+     if not bearer:
+         raise UploadAuthorizationError("authenticated bearer is required")
+-    request = Request(f"{repository.url}/storage/v1/object/{bucket}/{path}", data=content, method="POST", headers={"apikey": repository.key, "Authorization": f"Bearer {bearer}", "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})
++    object_path = quote(f"{bucket}/{path}", safe="/")
++    request = Request(f"{repository.url}/storage/v1/object/{object_path}", data=content, method="POST", headers={"apikey": repository.key, "Authorization": f"Bearer {bearer}", "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})
+     with urlopen(request, timeout=300):
+         pass
+ 
+@@ -25,7 +27,8 @@ def storage_delete(repository: ReleaseStorage, bucket: str, path: str, token: st
+     bearer = repository.key
+     if not bearer:
+         raise UploadAuthorizationError("authenticated bearer is required")
+-    request = Request(f"{repository.url}/storage/v1/object/{bucket}/{path}", method="DELETE", headers={"apikey": repository.key, "Authorization": f"Bearer {bearer}"})
++    object_path = quote(f"{bucket}/{path}", safe="/")
++    request = Request(f"{repository.url}/storage/v1/object/{object_path}", method="DELETE", headers={"apikey": repository.key, "Authorization": f"Bearer {bearer}"})
+     with urlopen(request, timeout=10):
+         pass
+ 
+@@ -34,7 +37,8 @@ def storage_download(repository: ReleaseStorage, bucket: str, path: str, token:
+     bearer = repository.key
+     if not bearer:
+         raise UploadAuthorizationError("authenticated bearer is required")
+-    request = Request(f"{repository.url}/storage/v1/object/{bucket}/{path}", method="GET", headers={"apikey": repository.key, "Authorization": f"Bearer {bearer}"})
++    object_path = quote(f"{bucket}/{path}", safe="/")
++    request = Request(f"{repository.url}/storage/v1/object/{object_path}", method="GET", headers={"apikey": repository.key, "Authorization": f"Bearer {bearer}"})
+     with urlopen(request, timeout=300) as response:
+         return response.read()
+ 
+@@ -43,7 +47,8 @@ def storage_signed_download(repository: ReleaseStorage, bucket: str, path: str,
+     bearer = repository.key
+     if not bearer:
+         raise UploadAuthorizationError("authenticated bearer is required")
+-    request = Request(f"{repository.url}/storage/v1/object/sign/{bucket}/{path}", data=json.dumps({"expiresIn": expires}).encode(), method="POST", headers={"apikey": repository.key, "Authorization": f"Bearer {bearer}", "Content-Type": "application/json"})
++    object_path = quote(f"{bucket}/{path}", safe="/")
++    request = Request(f"{repository.url}/storage/v1/object/sign/{object_path}", data=json.dumps({"expiresIn": expires}).encode(), method="POST", headers={"apikey": repository.key, "Authorization": f"Bearer {bearer}", "Content-Type": "application/json"})
+     with urlopen(request, timeout=10) as response:
+         payload = json.loads(response.read().decode("utf-8"))
+     if not isinstance(payload, dict) or not isinstance(payload.get("signedURL"), str):
+diff --git a/.codex-tmp/release-fix/current2/web/release_routes.py b/.codex-tmp/release-fix/modified/web/release_routes.py
+index 18b810b..e12fb0a 100644
+--- a/.codex-tmp/release-fix/current2/web/release_routes.py
++++ b/.codex-tmp/release-fix/modified/web/release_routes.py
+@@ -1,6 +1,7 @@
+ from __future__ import annotations
+ 
+ import json
++from http.client import HTTPException
+ from datetime import datetime
+ from typing import Any
+ from urllib.error import HTTPError
+@@ -66,7 +67,7 @@ class ReleaseRoutesMixin:
+         except (KeyError, TypeError, ValueError, UnicodeDecodeError) as error:
+             self.send(400, json.dumps({"error": "invalid_release_request", "message": str(error)}, ensure_ascii=False).encode(), "application/json")
+             return
+-        except (HTTPError, OSError, UploadValidationError) as error:
++        except (HTTPError, HTTPException, OSError, UploadValidationError) as error:
+             self.send(502, json.dumps({"error": "release_failed", "message": str(error)}, ensure_ascii=False).encode(), "application/json")
+             return
+         self.send(201, json.dumps(record.to_json(), ensure_ascii=False).encode(), "application/json")

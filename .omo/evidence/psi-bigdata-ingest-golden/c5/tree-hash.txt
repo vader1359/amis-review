@@ -1,0 +1,5 @@
+Surface: fresh real CLI cold run, then independent filesystem inspection.
+Exact output tree: 8 non-empty files total: 7 `cache/<relation>-<sha256>.parquet` files plus `inspect-report.json`; no other files/directories published.
+The seven cache relation roles observed were `crm_sales`, `crm_sale_items`, `product_master`, `sales_detail_misa`, `inventory`, `purchase_po`, and `target`.
+Parquet count 7; report count 1; non-empty count 8; all 7 Parquet names have 64-hex content identities.
+The report carries 7 ordered relation entries, 7 expected/actual schema-shape matches, and no raw rows, absolute source paths, or timestamp keys.

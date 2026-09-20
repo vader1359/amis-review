@@ -1,0 +1,22 @@
+{
+  "purchase": {
+    "filename": "0_LOADING LIST DETAIL_New.xlsx",
+    "sha256": "768081ce81192e00d80c47081ea1e697aba5dcb6cb4c45587ab1172ed0d63137",
+    "saved": true
+  },
+  "target": {
+    "filename": "Target.xlsx",
+    "sha256": "d55f701d64adba55ed9f057b110574b184d2d1a2e1353042c1313c99e8c60e3e",
+    "saved": true
+  },
+  "manual_check": {
+    "filename": "PSI_Manual_Check.xlsx",
+    "sha256": "fe78ab207f85b6af8e6af94c484e01048bf7eb08d9bca81861d668de788c6d2f",
+    "saved": true
+  },
+  "prior_psi": {
+    "filename": "PSI_Final_27.08.2026.xlsx",
+    "sha256": "63b1a8847c28ae6f281dfb8addc03a4d6779a36f6c61af7f6649c49c20a9fc1d",
+    "saved": true
+  }
+}

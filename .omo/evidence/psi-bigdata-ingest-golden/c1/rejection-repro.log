@@ -1,0 +1,9 @@
+command: rtk proxy uv run pytest tests/psi_tool/test_contracts.py -q
+exit_code: 1
+stdout_stderr_redacted: |
+  ...FFFFFF.
+  6 failed, 4 passed in 0.25s
+  Failed: DID NOT RAISE ManifestLoadError
+  scenarios: missing_source_file, hash_drift, missing_projected_header,
+    duplicate_source_header, invalid_header_row, missing_sheet
+row_data_or_pii: none

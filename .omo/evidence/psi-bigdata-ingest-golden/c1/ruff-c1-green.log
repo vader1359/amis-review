@@ -1,0 +1,4 @@
++zsh:1> rtk proxy uv run ruff check --select ALL src/psi_tool/contracts.py src/psi_tool/_contract_errors.py src/psi_tool/_contract_models.py src/psi_tool/_workbook_validation.py tests/psi_tool/test_contracts.py
+All checks passed!
++zsh:1> rtk proxy uv run ruff format --check src/psi_tool/contracts.py src/psi_tool/_contract_errors.py src/psi_tool/_contract_models.py src/psi_tool/_workbook_validation.py tests/psi_tool/test_contracts.py
+5 files already formatted

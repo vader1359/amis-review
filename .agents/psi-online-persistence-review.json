@@ -1,0 +1,23 @@
+{
+  "reviewer": "online_persistence_code_review",
+  "verdict": "CLEAR / APPROVE",
+  "blockers": [],
+  "reviewed_checks": [
+    "atomic transaction",
+    "idempotence integrity",
+    "typed cells and formula caches",
+    "ordered payload roundtrip",
+    "missing-report404 and invalidpage422",
+    "exact regenerated workbook SHA"
+  ],
+  "tests": "16 persistence/API tests PASS; focused Ruff PASS",
+  "file_sha256": {
+    "web/online_report_store.py": "b3585d7e23aab6802cf6c7b6829acac1848f6994a5ae7426f093e50634b7d866",
+    "infra/sql/psi_preview_reports.sql": "c29e5642e8c5be33500f841b6a1de88e4d7de296431dddd70ad2488acbdafcfc",
+    "web/preview.py": "07a37492af7167de44098b871ed528deb4d67ac0cf3ff6959de9da0a5baa426c",
+    "web/ui/src/main.jsx": "5d42b7404f987f7fc8eed784292a071e79e7bf41a62c64cd4379e003189c4375",
+    "web/ui/src/styles.css": "cd657acc6ec112d909293b4964d74245f93dbab379aed603659087b4628bca7e",
+    "tests/test_online_report_store.py": "caf12c06b32c3759de791ec87e46ded130c1043067d94e8a35ece28864c0f6ef",
+    "tests/psi_tool/test_online_report_api.py": "72a479b1e80e2c949532be4cde024656d1db22618cbfb14a6aeb278c159d53a3"
+  }
+}

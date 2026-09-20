@@ -1,0 +1,13 @@
+diff --git a/web/weekly_routes.py b/web/weekly_routes.py
+index 3eaea4d..d44707d 100644
+--- a/web/weekly_routes.py
++++ b/web/weekly_routes.py
+@@ -74,7 +74,7 @@ class WeeklyRoutesMixin:
+                 sources_ready = len(latest) == len(REQUIRED_SOURCES)
+                 gate = self.release_service.inspect_gate(ReleaseRequest(period_key, actor_id, team_id), token)
+                 releases = self.store.repository.lookup("psi_releases", {"reporting_period_id": period_id}, token)
+-                latest_release = max(releases, key=lambda row: str(row.get("created_at", "")), default=None)
++                latest_release = max(releases, key=lambda row: str(row.get("published_at", "")), default=None)
+                 download_url = storage_signed_download(self.store.repository, "psi-release", str(latest_release["object_path"]), 300, token) if latest_release else None
+                 payload = {
+                     "team_id": team_id, "week": period_key, "files": files,

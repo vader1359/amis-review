@@ -1,0 +1,21 @@
+{
+  "driver": "uv run .omo/evidence/psi-bigdata-ingest-golden/c3/manual_pyarrow_check.py tests/psi_tool/fixtures/golden_manifest.toml .tmp/psi-c3-final-manual-2",
+  "cold_misses": 7,
+  "no_rewrites": true,
+  "numpy_version": "2.5.2",
+  "relations": [
+    {"all_string": true, "columns": 17, "null_counts": true, "ordered_schema": true, "relation_id": "crm_sales", "rows": 9982},
+    {"all_string": true, "columns": 19, "null_counts": true, "ordered_schema": true, "relation_id": "crm_sale_items", "rows": 49122},
+    {"all_string": true, "columns": 13, "null_counts": true, "ordered_schema": true, "relation_id": "product_master", "rows": 27730},
+    {"all_string": true, "columns": 21, "null_counts": true, "ordered_schema": true, "relation_id": "sales_detail_misa", "rows": 12049},
+    {"all_string": true, "columns": 9, "null_counts": true, "ordered_schema": true, "relation_id": "inventory", "rows": 3409},
+    {"all_string": true, "columns": 22, "null_counts": true, "ordered_schema": true, "relation_id": "purchase_po", "rows": 2624},
+    {"all_string": true, "columns": 5, "null_counts": true, "ordered_schema": true, "relation_id": "target", "rows": 19}
+  ],
+  "source_hashes_unchanged": true,
+  "stable_metadata": true,
+  "status": "PASS",
+  "temp_leaks": 0,
+  "verified": 7,
+  "warm_hits": 7
+}

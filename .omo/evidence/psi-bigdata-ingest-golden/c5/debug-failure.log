@@ -1,0 +1,12 @@
+Surface: tmux CLI handled failure and foreign-output public inspect command (paths redacted as <AUDIT_TMP>)
+Missing-manifest invocation: uv run --project <REPO> psi inspect --manifest <AUDIT_TMP>/workspace/tests/psi_tool/fixtures/no-such-manifest.toml --output-dir <AUDIT_TMP>/failure-output
+Missing-manifest transcript:
+FAIL report=none semantic_sha256=a40f7a70ffc3f1d348309435bf096618d0dcabe7784cea76a21e5bf02aeaf4f9
+inspect failed: validation_failed
+EXIT_CODE=1
+Foreign-output invocation: uv run --project <REPO> psi inspect --manifest <AUDIT_TMP>/workspace/tests/psi_tool/fixtures/golden_manifest.toml --output-dir <AUDIT_TMP>/foreign-output
+Foreign-output transcript:
+inspect failed: validation_failed
+FAIL report=none semantic_sha256=a40f7a70ffc3f1d348309435bf096618d0dcabe7784cea76a21e5bf02aeaf4f9
+EXIT_CODE=1
+Observed state: foreign marker remained; no report was published.

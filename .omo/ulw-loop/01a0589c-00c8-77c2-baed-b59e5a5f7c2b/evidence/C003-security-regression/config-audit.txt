@@ -1,0 +1,13 @@
+Captured 2026-08-31T16:42:00Z at git tree 15263c5.
+
+PASS: tracked dirty set is unchanged from the 2026-08-31T16:22:45Z baseline: .gitignore, README.md, bao_cao_doi_soat_CRM_MISA_2026-07-05.xlsx, input/CRM_Sale.xlsx, and scripts/build_audit_report.py remain modified and were not edited by this task.
+PASS: intended project additions are .agents/skills/neon, .agents/skills/neon-postgres, and skills-lock.json. They identify public neondatabase/agent-skills sources and contain no credentials.
+PASS: .neon is ignored by the pre-existing .gitignore:8 rule, is not tracked, and contains only orgId, projectId, and branch.
+PASS: no repository .env file exists; neon link used --no-env-pull.
+PASS: credential-pattern scan across .neon, skills-lock.json, and both installed skill directories returned no matches.
+PASS: Codex parses the global MCP config and reports Neon enabled with OAuth, project-scoped read-only URL, and no HTTP authorization header.
+PASS: temporary project-scoped API key 3299882 was revoked after OAuth passed.
+PASS: BrowserOS task-owned pages 11 and 12 were closed; no codex mcp login Neon or neon config status process remains.
+PASS: temporary BrowserOS PDF was moved to Trash after browser.png was rendered and verified.
+
+Concurrent/pre-existing untracked work was preserved. The baseline already represented .omo as untracked; this task wrote evidence only under its own run directory.

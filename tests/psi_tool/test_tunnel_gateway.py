@@ -295,7 +295,6 @@ def test_browser_login_session_and_private_data(config_path, tmp_path, monkeypat
 ])
 def test_external_link_only_allows_public_page_navigation(config_path, method, path, mode, dest, status):
     import asyncio
-
     from starlette.responses import Response
 
     async def run():

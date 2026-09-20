@@ -1,0 +1,7 @@
+command: rtk proxy uv run pytest tests/psi_tool/test_contracts.py -k invalid_nonblank_header_count -q
+exit_code: 1
+stdout_stderr_redacted: |
+  1 failed, 10 deselected in 26.13s
+  Failed: DID NOT RAISE ManifestLoadError
+  scenario: invalid_nonblank_header_count
+row_data_or_pii: none

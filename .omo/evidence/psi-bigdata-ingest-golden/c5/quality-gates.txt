@@ -1,0 +1,7 @@
+Surface: local CLI/package command gates.
+- `uv sync --locked` -> exit 0; 25 packages checked.
+- `uv run pytest tests/psi_tool -q --junitxml=<redacted>` -> exit 0; 40 passed, 0 failed, 0 skipped, 97.52s.
+- `uv run ruff check src tests` -> exit 0; All checks passed.
+- `uv run ruff format --check src tests` -> exit 0; 20 files already formatted.
+- `uv run basedpyright` -> exit 0; 0 errors, 0 warnings, 0 notes.
+- `uv run pytest tests/psi_tool/test_cli.py -q -k interrupted or regular_file` -> exit 0; 2 passed, 4 deselected.

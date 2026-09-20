@@ -1,0 +1,270 @@
+diff --git a/.codex-tmp/mismatch-fix/code-applied/tests/test_local_preview_release.py b/.codex-tmp/mismatch-fix/modified/tests/test_local_preview_release.py
+index 4fd098e..3aff481 100644
+--- a/.codex-tmp/mismatch-fix/code-applied/tests/test_local_preview_release.py
++++ b/.codex-tmp/mismatch-fix/modified/tests/test_local_preview_release.py
+@@ -68,6 +68,8 @@ def test_local_preview_upload_release_download_is_authorized_and_immutable() ->
+         assert _upload(port, viewer, "product", "product_fixture.xlsx") == 201
+         assert _upload(port, admin, "product", "product_fixture.xlsx") == 201
+         assert all(_upload(port, contributor, source_type, filename) == 201 for source_type, filename in FIXTURES.items())
++        for mismatch in store.repository.rows("mismatches"):
++            mismatch["status"] = "known"
+         status, first = _release(port, admin); assert status == 201 and isinstance(first["signed_url"], str)
+         connection = HTTPConnection("127.0.0.1", port); connection.request("GET", str(first["signed_url"]), headers={"Authorization": f"Bearer {admin}"}); response = connection.getresponse(); content = response.read(); connection.close()
+         assert response.status == 200
+diff --git a/.codex-tmp/mismatch-fix/code-applied/tests/test_psi_persistence.py b/.codex-tmp/mismatch-fix/modified/tests/test_psi_persistence.py
+index 66e163c..28f2ee0 100644
+--- a/.codex-tmp/mismatch-fix/code-applied/tests/test_psi_persistence.py
++++ b/.codex-tmp/mismatch-fix/modified/tests/test_psi_persistence.py
+@@ -22,7 +22,7 @@ from psi_engine import PsiReleaseService, ReleaseConfig, ReleaseGateError, Relea
+ FIXTURES = Path(__file__).parent / "fixtures"
+ 
+ 
+-def test_persistent_upload_keeps_snapshot_provenance_and_deduplicates_known_issue() -> None:
++def test_persistent_upload_keeps_snapshot_provenance() -> None:
+     store = server.PsiMemoryStore()
+     request = server.UploadRequest(
+         team_id="team-a",
+@@ -40,7 +40,7 @@ def test_persistent_upload_keeps_snapshot_provenance_and_deduplicates_known_issu
+     assert first.snapshot.object_path != second.snapshot.object_path
+     assert first.snapshot.checksum_sha256 == second.snapshot.checksum_sha256
+     assert first.run.fingerprint == second.run.fingerprint
+-    assert first.run.duplicate_policy == "known_or_resolved_suppressed"
++    assert first.run.duplicate_policy == "active_mismatches_recorded"
+     assert len(store.snapshots) == 2
+     assert len(store.activity) == 2
+ 
+@@ -161,29 +161,24 @@ def test_persistence_maps_relational_entities_to_fake_repository() -> None:
+     assert repository.rows("activity_logs")
+ 
+ 
+-def test_known_issue_recurrence_reopens_once_and_suppresses_duplicate() -> None:
++def test_new_mismatch_has_exact_location_and_handled_fingerprint_is_suppressed() -> None:
+     repository = server.PsiMemoryRepository()
+     store = server.PsiMemoryStore(repository=repository)
+-    workbook = Workbook()
+-    workbook.active.append(["unexpected"])
+-    output = io.BytesIO()
+-    workbook.save(output)
+-    request = server.UploadRequest(
+-        team_id="team-a", actor_id="user-a", reporting_period="2026-07",
+-        data_as_of="2026-07-05", source_type="product", filename="product_fixture.xlsx",
+-        content=output.getvalue(),
+-    )
+-
+-    first = store.persist(request)
+-    repository.resolve_mismatches(first.run.id, "user-a")
+-    second = store.persist(request)
+-
++    store.persist(server.UploadRequest("team-a", "user-a", "2026-07", "2026-07-05", "product", "product_fixture.xlsx", (FIXTURES / "product_fixture.xlsx").read_bytes()))
++    request = server.UploadRequest("team-a", "user-a", "2026-07", "2026-07-05", "revenue", "so_chi_tiet_revenue_fixture.xlsx", (FIXTURES / "so_chi_tiet_revenue_fixture.xlsx").read_bytes())
++    store.persist(request)
+     mismatches = repository.rows("mismatches")
+     assert len(mismatches) == 1
+-    assert mismatches[0]["status"] == "reopened"
+-    assert mismatches[0]["known_issue_id"]
+-    assert repository.rows("mismatch_history")[-1]["to_status"] == "reopened"
+-    assert second.run.duplicate_policy == "known_issue_reopened"
++    mismatch = mismatches[0]
++    assert mismatch["status"] == "new"
++    assert mismatch["values_by_source"] == {"file": "so_chi_tiet_revenue_fixture.xlsx", "sheet": "Sheet", "row": 6, "code": "SKU-MISSING", "description": "Missing revenue", "issue": "Missing Product mapping"}
++    mismatch_id = str(mismatch["id"])
++    repository.transition_mismatch(mismatch_id, "assigned", "", {}, "user-a")
++    repository.transition_mismatch(mismatch_id, "in_progress", "", {}, "user-a")
++    repository.transition_mismatch(mismatch_id, "known", "verified", {"source": "test"}, "user-a")
++    store.persist(request)
++    assert len(repository.rows("mismatches")) == 1
++    assert repository.rows("mismatches")[0]["status"] == "known"
+ 
+ 
+ def test_invalid_calendar_and_malformed_multipart_are_controlled_4xx() -> None:
+diff --git a/.codex-tmp/mismatch-fix/code-applied/tests/test_psi_release_verifier.py b/.codex-tmp/mismatch-fix/modified/tests/test_psi_release_verifier.py
+index caa3a76..3147669 100644
+--- a/.codex-tmp/mismatch-fix/code-applied/tests/test_psi_release_verifier.py
++++ b/.codex-tmp/mismatch-fix/modified/tests/test_psi_release_verifier.py
+@@ -19,6 +19,8 @@ def release_store() -> server.PsiMemoryStore:
+     sources = (("product", "product_fixture.xlsx"), ("purchase", "loading_purchase_fixture.xlsx"), ("revenue", "so_chi_tiet_revenue_fixture.xlsx"), ("inventory", "tong_hop_ton_kho_inventory_fixture.xlsx"), ("preorder", "pre-order_fixture.xlsx"), ("crm", "crm_sale_fixture.xlsx"), ("target", "target_fixture.xlsx"))
+     for source_type, filename in sources:
+         store.persist(server.UploadRequest("team-a", "user-a", "2026-07", "2026-07-05", source_type, filename, (FIXTURES / filename).read_bytes()))
++    for mismatch in store.repository.rows("mismatches"):
++        mismatch["status"] = "known"
+     return store
+ 
+ 
+@@ -56,30 +58,32 @@ def test_release_gate_rejects_corrupt_generated_workbook_before_writes(monkeypat
+ 
+ 
+ @pytest.mark.parametrize(
+-    ("severity", "status"),
++    ("severity", "status", "allowed"),
+     [
+-        ("blocking", "new"),
+-        ("blocking", "assigned"),
+-        ("warning", "in_progress"),
+-        ("info", "reopened"),
+-        ("blocking", "resolved"),
++        ("blocking", "new", False),
++        ("blocking", "assigned", False),
++        ("warning", "in_progress", False),
++        ("informational", "reopened", False),
++        ("blocking", "resolved", True),
++        ("warning", "known", True),
++        ("warning", "ignored", True),
+     ],
+ )
+-def test_release_gate_reports_mismatches_without_blocking_generation(severity: str, status: str) -> None:
++def test_release_gate_blocks_only_unhandled_mismatches(severity: str, status: str, allowed: bool) -> None:
+     snapshots = [{"source_type": source, "schema_status": "passed", "data_as_of": "2026-07-05"} for source in REQUIRED_SOURCES]
+     decision = evaluate_gate(snapshots, [{"severity": severity, "status": status}], date(2026, 7, 5), 30)
+-    assert decision.allowed
+-    assert not decision.reasons
++    assert decision.allowed is allowed
++    assert (not decision.reasons) is allowed
+ 
+ 
+-def test_release_generates_final_when_reconciliation_has_new_mismatch() -> None:
++def test_release_refuses_final_when_reconciliation_has_new_mismatch() -> None:
+     store = release_store()
+     store.repository.insert(
+         "mismatches",
+         {"reporting_period_id": "2026-07", "severity": "blocking", "status": "new"},
+     )
+-    record = PsiReleaseService(store).generate(ReleaseRequest("2026-07", "user-a"))
+-    assert record.status == "published"
++    with pytest.raises(ReleaseGateError, match="mismatch chưa được xử lý"):
++        PsiReleaseService(store).generate(ReleaseRequest("2026-07", "user-a"))
+ 
+ 
+ @pytest.mark.parametrize("failed_table", ["psi_drafts", "draft_sources", "psi_releases", "release_sources", "activity_logs"])
+diff --git a/.codex-tmp/mismatch-fix/code-applied/tests/test_psi_roles.py b/.codex-tmp/mismatch-fix/modified/tests/test_psi_roles.py
+index 83afece..17448d6 100644
+--- a/.codex-tmp/mismatch-fix/code-applied/tests/test_psi_roles.py
++++ b/.codex-tmp/mismatch-fix/modified/tests/test_psi_roles.py
+@@ -18,6 +18,8 @@ def _release_store() -> server.PsiMemoryStore:
+     }
+     for source_type, filename in fixtures.items():
+         store.persist(server.UploadRequest("team-a", "user-a", "2026-07", "2026-07-05", source_type, filename, (ROOT / "tests" / "fixtures" / filename).read_bytes()))
++    for mismatch in store.repository.rows("mismatches"):
++        mismatch["status"] = "known"
+     return store
+ 
+ 
+@@ -69,10 +71,10 @@ def test_release_gate_http_error_is_structured_and_side_effect_free() -> None:
+         httpd.shutdown(); httpd.server_close(); thread.join(timeout=2)
+ 
+ 
+-def test_release_http_allows_mismatch_diagnostics_for_authenticated_contributors() -> None:
++def test_release_http_blocks_active_mismatch_for_authenticated_admin() -> None:
+     store = _release_store(); store.repository.insert("mismatches", {"id": "block", "reporting_period_id": "2026-07", "severity": "blocking", "status": "new"}); httpd, thread = _serve(store)
+     try:
+-        assert _post(httpd.server_address[1], {"reporting_period": "2026-07"})[0] == 201
++        assert _post(httpd.server_address[1], {"reporting_period": "2026-07"})[0] == 400
+         assert _post(httpd.server_address[1], {"reporting_period": "2026-07"}, "viewer-token")[0] == 403
+         assert _post(httpd.server_address[1], {"reporting_period": "2026-07"}, "reviewer-token")[0] == 403
+         assert _post(httpd.server_address[1], {"reporting_period": "2026-07"}, "missing-token")[0] == 401
+@@ -80,6 +82,21 @@ def test_release_http_allows_mismatch_diagnostics_for_authenticated_contributors
+         httpd.shutdown(); httpd.server_close(); thread.join(timeout=2)
+ 
+ 
++def test_reviewer_can_finish_new_mismatch_in_one_action() -> None:
++    store = server.PsiMemoryStore()
++    store.repository.insert("mismatches", {"id": "case-1", "status": "new"})
++    httpd, thread = _serve(store)
++    try:
++        connection = HTTPConnection("127.0.0.1", httpd.server_address[1])
++        connection.request("POST", "/api/mismatch", body=json.dumps({"mismatch_id": "case-1", "to_status": "known", "comment": "checked", "evidence": {"source": "test"}}), headers={"Authorization": "Bearer reviewer-token", "Content-Type": "application/json"})
++        response = connection.getresponse(); response.read(); connection.close()
++        assert response.status == 200
++        assert store.repository.lookup("mismatches", {"id": "case-1"})[0]["status"] == "known"
++        assert [row["to_status"] for row in store.repository.lookup("mismatch_history", {"mismatch_id": "case-1"})] == ["assigned", "in_progress", "known"]
++    finally:
++        httpd.shutdown(); httpd.server_close(); thread.join(timeout=2)
++
++
+ def test_release_http_generates_from_latest_valid_weekly_snapshots() -> None:
+     fixtures = {
+         "product": "product_fixture.xlsx", "purchase": "loading_purchase_fixture.xlsx",
+@@ -89,6 +106,8 @@ def test_release_http_generates_from_latest_valid_weekly_snapshots() -> None:
+     store = server.PsiMemoryStore()
+     for source_type, filename in fixtures.items():
+         store.persist(server.UploadRequest("team-a", "user-a", "2026-W29", "", source_type, filename, (ROOT / "tests" / "fixtures" / filename).read_bytes()))
++    for mismatch in store.repository.rows("mismatches"):
++        mismatch["status"] = "known"
+     httpd, thread = _serve(store)
+     try:
+         status, _, body = _post(httpd.server_address[1], {"reporting_period": "2026-W29"})
+diff --git a/.codex-tmp/mismatch-fix/code-applied/tests/test_psi_supabase.py b/.codex-tmp/mismatch-fix/modified/tests/test_psi_supabase.py
+index eeda1e3..828c5b6 100644
+--- a/.codex-tmp/mismatch-fix/code-applied/tests/test_psi_supabase.py
++++ b/.codex-tmp/mismatch-fix/modified/tests/test_psi_supabase.py
+@@ -4,6 +4,7 @@ import sys
+ import threading
+ from pathlib import Path
+ 
++import pytest
+ from openpyxl import Workbook
+ 
+ ROOT = Path(__file__).resolve().parents[1]
+@@ -92,7 +93,7 @@ def test_supabase_persistence_uses_authenticated_identity_staged_object_and_upse
+         metadata = next(json.loads(body) for method, path, _, body in requests if method == "POST" and path == "/rest/v1/source_snapshot_metadata")
+         assert metadata == {"source_snapshot_id": persisted.snapshot.id, "header_preview": ["unexpected"], "schema_gaps": [list(gap) for gap in persisted.snapshot.schema_gaps]}
+         assert any(path == "/rest/v1/source_selections?on_conflict=reporting_period_id,source_type" for _, path, _, _ in requests)
+-        assert any(path == "/rest/v1/mismatches" and json.loads(body)["rule_version_id"] == "rule-uuid" for _, path, _, body in requests)
++        assert not any(path == "/rest/v1/mismatches" for _, path, _, _ in requests)
+     finally:
+         httpd.shutdown(); httpd.server_close(); thread.join(timeout=2)
+ 
+@@ -116,7 +117,7 @@ def test_persisted_snapshot_metadata_is_written_as_json() -> None:
+     assert row["schema_gaps"] == [list(gap) for gap in persisted.snapshot.schema_gaps]
+ 
+ 
+-def test_supabase_mutations_use_server_role_bearer_token() -> None:
++def test_supabase_mutations_use_server_role_but_mismatch_transition_uses_user_bearer() -> None:
+     headers: list[str] = []
+ 
+     class Recorder(server.BaseHTTPRequestHandler):
+@@ -131,12 +132,12 @@ def test_supabase_mutations_use_server_role_bearer_token() -> None:
+     try:
+         repository = server.SupabaseRepository(f"http://127.0.0.1:{httpd.server_address[1]}", "server-secret")
+         repository.insert("upload_batches", {"id": "batch"}, "user-token"); repository.upsert("source_selections", {"id": "selection"}, "id", "user-token"); repository.upload("team/batch/snapshot", b"xlsx", "user-token"); repository.transition_mismatch("mismatch", "reopened", "recurrence", {"recurrence": "true"}, "actor", "user-token")
+-        assert headers == ["Bearer server-secret"] * 4
++        assert headers == ["Bearer server-secret"] * 3 + ["Bearer user-token"]
+     finally:
+         httpd.shutdown(); httpd.server_close(); thread.join(timeout=2)
+ 
+ 
+-def test_supabase_operations_use_service_role_without_user_bearer() -> None:
++def test_supabase_service_operations_work_without_user_bearer_but_transition_requires_one() -> None:
+     requests: list[str] = []
+ 
+     class Recorder(server.BaseHTTPRequestHandler):
+@@ -159,16 +160,16 @@ def test_supabase_operations_use_service_role_without_user_bearer() -> None:
+             lambda: repository.insert("upload_batches", {"id": "batch"}),
+             lambda: repository.upsert("source_selections", {"id": "selection"}, "id"),
+             lambda: repository.upload("team/batch/snapshot", b"xlsx"),
+-            lambda: repository.transition_mismatch("mismatch", "reopened", "recurrence", {"recurrence": "true"}, "actor"),
+         )
+         for operation in operations:
+             operation()
++        with pytest.raises(server.UploadAuthorizationError):
++            repository.transition_mismatch("mismatch", "reopened", "recurrence", {"recurrence": "true"}, "actor")
+         assert requests == [
+             "/rest/v1/profiles?id=eq.actor",
+             "/rest/v1/upload_batches",
+             "/rest/v1/source_selections?on_conflict=id",
+             "/storage/v1/object/psi-source/team/batch/snapshot",
+-            "/rest/v1/rpc/transition_mismatch",
+         ]
+     finally:
+         httpd.shutdown(); httpd.server_close(); thread.join(timeout=2)
+diff --git a/.codex-tmp/mismatch-fix/code-applied/tests/test_reconciliation_engine.py b/.codex-tmp/mismatch-fix/modified/tests/test_reconciliation_engine.py
+index 1f8320e..a980ed1 100644
+--- a/.codex-tmp/mismatch-fix/code-applied/tests/test_reconciliation_engine.py
++++ b/.codex-tmp/mismatch-fix/modified/tests/test_reconciliation_engine.py
+@@ -96,5 +96,5 @@ def test_build_returns_deterministic_mismatch_fingerprint_when_fixture_set_is_pr
+     second = server.build(files)
+     # Then: observable mismatch content and its fingerprint are deterministic.
+     assert first["issues"] == second["issues"]
+-    assert issue_fingerprint(first["issues"]) == "e1d815651d1a346479556c526b2cd28a3d6b22ded279c9292a8f1e3f2e6a7124"
+-
++    assert first["issues"][0] == ["Revenue", "so_chi_tiet_revenue_fixture.xlsx", "Sheet", 6, "SKU-MISSING", "Missing revenue", "Missing Product mapping"]
++    assert issue_fingerprint(first["issues"]) == "ff37cbbba03d3ea7a29ba2b269834d87fe056eb2bdc3dd8a2d8f8e98f2b5fd07"

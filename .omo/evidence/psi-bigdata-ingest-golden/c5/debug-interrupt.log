@@ -1,0 +1,9 @@
+Surface: tmux CLI Ctrl-C interruption during cold public inspect command (paths redacted as <AUDIT_TMP>)
+Invocation: uv run --project <REPO> psi inspect --manifest <AUDIT_TMP>/workspace/tests/psi_tool/fixtures/golden_manifest.toml --output-dir <AUDIT_TMP>/interrupt-output
+Transcript:
+^C
+Observed state after session exit:
+- No PASS/FAIL report and no final cache/ directory.
+- One hidden staging directory `.cache-<random>.tmp/` remained under the output directory.
+- It contained exactly one partial parquet (293588 bytes).
+- No source fixture was modified.

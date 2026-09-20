@@ -1,0 +1,28 @@
+{
+  "observed_at": "2026-09-05T15:16:17.745217+00:00",
+  "surface": "User-authorized signed-in Chrome Google Cloud Console",
+  "project_id": "amis-psi-preview-20260905",
+  "project_number": "803385681218",
+  "project_name": "AMIS PSI Preview",
+  "organization": "No organization",
+  "project_creation": "SUCCEEDED, verified completion notification and project welcome page",
+  "billing": "BLOCKED: Google Cloud reports no active billing accounts; both existing accounts are Closed",
+  "mutations": [
+    "Created isolated preview project"
+  ],
+  "production_mutations": false,
+  "deployment_complete": false,
+  "billing_accounts": [
+    {
+      "name": "My Billing Account",
+      "status": "Closed"
+    },
+    {
+      "name": "nanoHome",
+      "status": "Closed"
+    }
+  ],
+  "billing_action_pending": "User confirmation requested for paid upgrade/reopening of My Billing Account and linking PSI; no answer yet",
+  "browser_status": "Chrome CUA timed out twice on account management navigation; no further mutation attempted",
+  "free_trial": "My Billing Account banner says free trial over; Upgrade available"
+}

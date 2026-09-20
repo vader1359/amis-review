@@ -1,0 +1,15 @@
+{
+  "host": "Ian Win WSL Ubuntu",
+  "python": "3.14.6",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.43",
+  "qa_endpoint": "ep-floral-shadow-b3vc3mrv-pooler.c-4.ap-southeast-1.aws.neon.tech",
+  "implementation_sha256": {
+    "web/review_api.py": "e85c1729e33bf252667771d1c928a91c7d46864cd12461c588651489467cc30f",
+    "web/review_store.py": "39eeb7b5fdbe9198634a15d72ea97f7c9a55defd204c65aff1aaef9e75f13845",
+    "web/review_sources.py": "a1fc44f06e39dc3b1d45b9571d00bcf88de58ef156027b769117a1b7ead43c81",
+    "web/online_report_store.py": "3d5da0531a96c7ab455c8bb6b3722806f3b52074d5aed5a7a150137a32df7229",
+    "src/psi_tool/online_pipeline.py": "bd662f444d6e97a098c661fc854d3277aebcfadab703f3e19fb00ba2380ed5eb",
+    "src/psi_tool/online_review.py": "0c28dc7d06be5a62be0c62a79adc85958ec6ebe52cfebcd6563ad14709af7775"
+  },
+  "live_services_modified": false
+}

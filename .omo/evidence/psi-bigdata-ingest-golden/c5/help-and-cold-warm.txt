@@ -1,0 +1,11 @@
+Surface: local CLI subprocess.
+Invocations:
+- `uv run psi --help` -> exit 0; 12 help lines; stderr empty.
+- `uv run psi inspect --help` -> exit 0; 10 help lines; stderr empty.
+- `uv run psi inspect --manifest tests/psi_tool/fixtures/golden_manifest.toml --output-dir <external>/run` (cold) -> exit 0.
+- Same invocation against the same run root (warm) -> exit 0.
+
+Cold report: overall PASS; cache_status cold; relation_count 7; hits 0,0,0,0,0,0,0; parquet_count 7; report_present true.
+Warm report: overall PASS; cache_status warm; relation_count 7; hits 1,1,1,1,1,1,1; parquet_count 7; report_present true.
+Both stdout semantic SHA-256: `c7a7f8c4878b0ae96fb8b1cf5a28151d097902b9cdd4b42d45da455881424fd2`.
+Cold/warm stderr bytes: 0/0. Source SHA-256 comparison: exit 0 (unchanged). Parquet bytes+mtime comparison: exit 0 (unchanged). Hidden temp entries: 0.

@@ -1,0 +1,2087 @@
+diff --git a/.gitignore b/.gitignore
+index 078ba2c..0516cf1 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -14,3 +14,6 @@ test-results/
+ # MemPalace per-project files (issue #185)
+ mempalace.yaml
+ entities.json
++node_modules/
++.next/
++.vercel/
+diff --git a/.python-version b/.python-version
+new file mode 100644
+index 0000000..6324d40
+--- /dev/null
++++ b/.python-version
+@@ -0,0 +1 @@
++3.14
+diff --git a/.vercelignore b/.vercelignore
+new file mode 100644
+index 0000000..e844efd
+--- /dev/null
++++ b/.vercelignore
+@@ -0,0 +1,20 @@
++.codegraph/
++.omo/
++.opencode/
++.playwright-mcp/
++.psi-qa-tmp/
++.pytest_cache/
++.codex-tmp/
++__pycache__/
++docs/
++input/
++old_check/
++outputs/
++scripts/
++supabase/
++test/
++tests/
++*.csv
++*.mjs
++*.png
++*.xlsx
+diff --git a/api/mismatch.py b/api/mismatch.py
+new file mode 100644
+index 0000000..1875be8
+--- /dev/null
++++ b/api/mismatch.py
+@@ -0,0 +1,11 @@
++import sys
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path[:0] = [str(ROOT), str(ROOT / "web")]
++
++from server import H
++
++
++class handler(H):
++    pass
+diff --git a/api/release.py b/api/release.py
+new file mode 100644
+index 0000000..1875be8
+--- /dev/null
++++ b/api/release.py
+@@ -0,0 +1,11 @@
++import sys
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path[:0] = [str(ROOT), str(ROOT / "web")]
++
++from server import H
++
++
++class handler(H):
++    pass
+diff --git a/api/weekly_status.py b/api/weekly_status.py
+new file mode 100644
+index 0000000..1875be8
+--- /dev/null
++++ b/api/weekly_status.py
+@@ -0,0 +1,11 @@
++import sys
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path[:0] = [str(ROOT), str(ROOT / "web")]
++
++from server import H
++
++
++class handler(H):
++    pass
+diff --git a/api/weekly_upload_staged.py b/api/weekly_upload_staged.py
+new file mode 100644
+index 0000000..1875be8
+--- /dev/null
++++ b/api/weekly_upload_staged.py
+@@ -0,0 +1,11 @@
++import sys
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path[:0] = [str(ROOT), str(ROOT / "web")]
++
++from server import H
++
++
++class handler(H):
++    pass
+diff --git a/app/api/upload-url/route.js b/app/api/upload-url/route.js
+new file mode 100644
+index 0000000..a7328e2
+--- /dev/null
++++ b/app/api/upload-url/route.js
+@@ -0,0 +1,81 @@
++import { randomUUID } from 'node:crypto';
++import { createClient } from '@supabase/supabase-js';
++
++export const runtime = 'nodejs';
++export const dynamic = 'force-dynamic';
++
++const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
++const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
++
++function jsonError(message, status) {
++  return Response.json({ error: message }, { status });
++}
++
++export async function POST(request) {
++  const supabaseUrl = process.env.SUPABASE_URL;
++  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
++  if (!supabaseUrl || !serviceRoleKey) {
++    return jsonError('Supabase server configuration is incomplete', 503);
++  }
++
++  const authorization = request.headers.get('authorization') || '';
++  const accessToken = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
++  if (!accessToken) {
++    return jsonError('authenticated bearer is required', 401);
++  }
++
++  let payload;
++  try {
++    payload = await request.json();
++  } catch {
++    return jsonError('upload metadata is invalid', 400);
++  }
++
++  const teamId = typeof payload.team_id === 'string' ? payload.team_id : '';
++  const filename = typeof payload.filename === 'string' ? payload.filename : '';
++  const contentType = typeof payload.content_type === 'string' ? payload.content_type : '';
++  const byteSize = Number(payload.byte_size);
++  const safeFilename = filename && filename === filename.split(/[\\/]/).pop();
++  if (
++    !/^[0-9a-f-]{36}$/i.test(teamId) ||
++    !safeFilename ||
++    !filename.toLowerCase().endsWith('.xlsx') ||
++    contentType !== XLSX_TYPE ||
++    !Number.isInteger(byteSize) ||
++    byteSize < 1 ||
++    byteSize > MAX_UPLOAD_BYTES
++  ) {
++    return jsonError('file must be a safe XLSX up to 25 MB', 400);
++  }
++
++  const admin = createClient(supabaseUrl, serviceRoleKey, {
++    auth: { autoRefreshToken: false, persistSession: false },
++  });
++  const { data: userData, error: userError } = await admin.auth.getUser(accessToken);
++  if (userError || !userData.user) {
++    return jsonError('authenticated user is unavailable', 401);
++  }
++
++  const { data: membership, error: membershipError } = await admin
++    .from('team_memberships')
++    .select('team_id')
++    .eq('profile_id', userData.user.id)
++    .eq('team_id', teamId)
++    .maybeSingle();
++  if (membershipError) {
++    return jsonError('team membership lookup failed', 502);
++  }
++  if (!membership) {
++    return jsonError('team membership is required', 403);
++  }
++
++  const stagingPath = `${teamId}/staging/${randomUUID()}.xlsx`;
++  const { data, error } = await admin.storage
++    .from('psi-source')
++    .createSignedUploadUrl(stagingPath);
++  if (error || !data?.token) {
++    return jsonError('could not prepare source upload', 502);
++  }
++
++  return Response.json({ staging_path: stagingPath, upload_token: data.token });
++}
+diff --git a/app/globals.css b/app/globals.css
+new file mode 100644
+index 0000000..cb7b8d4
+--- /dev/null
++++ b/app/globals.css
+@@ -0,0 +1,56 @@
++:root {
++  --ink:#17211b; --muted:#66756b; --canvas:#f4f7f2; --surface:#fff; --line:#d9e3d8;
++  --accent:#1d5138; --accent-soft:#e4f0df; --focus:#2457a6; --space-1:.5rem; --space-2:.75rem;
++  --space-3:1rem; --space-4:1.5rem; --space-5:2rem; --space-6:3rem; --radius-md:.75rem; --radius-lg:1.25rem;
++}
++* { box-sizing:border-box; }
++body { margin:0; background:radial-gradient(circle at 90% 0,#e7f2d8,transparent 36%),var(--canvas); color:var(--ink); font:14px/1.5 system-ui,-apple-system,sans-serif; }
++button,input,select { font:inherit; }
++.shell { width:100%; max-width:1180px; margin:auto; padding:var(--space-6) var(--space-4); }
++.topbar,.section-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:var(--space-4); min-width:0; }
++.hero-copy,.section-heading > div { min-width:0; }
++.topbar { margin-bottom:var(--space-4); }
++.eyebrow { color:var(--accent); font-size:11px; font-weight:800; letter-spacing:.14em; margin:0 0 var(--space-1); text-transform:uppercase; }
++h1,h2 { letter-spacing:-.04em; margin:0; }
++h1 { font-size:clamp(32px,6vw,58px); line-height:1.08; overflow-wrap:anywhere; }
++h2 { font-size:22px; line-height:1.25; }
++.lead,.hint { color:var(--muted); font-size:16px; margin:var(--space-2) 0 0; overflow-wrap:anywhere; }
++.hint { font-size:14px; }
++.badge,.ant-tag { border:1px solid var(--line); border-radius:999px; display:inline-flex; font-size:12px; font-weight:800; padding:6px 10px; text-align:center; white-space:normal; }
++.ant-tag-green,.badge.ready { background:#e8f6ec; border-color:#b7dfc3; color:#176337; }
++.ant-tag-gold,.badge.quiet { background:#fff7e6; border-color:#ffe0a3; color:#8c5c00; }
++.notice { background:#eaf4ff; border:1px solid #b7d8ff; border-radius:var(--radius-md); color:#234d73; margin-bottom:var(--space-5); padding:var(--space-3); }
++.card { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-lg); box-shadow:0 14px 40px #234b3010; margin-bottom:var(--space-4); padding:var(--space-4); }
++.form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--space-3); margin-top:var(--space-4); }
++.ant-form-item { display:grid; gap:var(--space-1); color:var(--muted); font-weight:700; }
++.ant-input,.ant-select-selector { width:100%; min-height:44px; border:1px solid #d9d9d9; border-radius:6px; background:#fff; color:var(--ink); padding:10px 12px; }
++.ant-input:focus,.ant-select-selector:focus-visible,.ant-btn:focus-visible { border-color:var(--focus); box-shadow:0 0 0 2px #2457a633; outline:0; }
++.checklist { display:grid; gap:var(--space-2); margin-top:var(--space-4); }
++.check-item { display:flex; align-items:center; justify-content:space-between; gap:var(--space-3); min-width:0; border:1px solid var(--line); border-radius:var(--radius-md); padding:var(--space-3); }
++.check-item > div { display:grid; gap:2px; min-width:0; }
++.check-item strong,.check-item small { overflow-wrap:anywhere; }
++.check-item small { color:var(--muted); }
++.ant-btn { align-items:center; background:#fff; border:1px solid #d9d9d9; border-radius:6px; color:var(--ink); cursor:pointer; display:inline-flex; font-weight:700; justify-content:center; min-height:44px; padding:0 16px; text-decoration:none; }
++.ant-btn:disabled,.ant-btn.disabled { cursor:not-allowed; opacity:.5; }
++.ant-btn-primary { background:#1677ff; border-color:#1677ff; color:#fff; }
++.result-card { margin-bottom:var(--space-3); }
++.diagnostics { margin-top:var(--space-3); }
++.mismatch-heading { display:flex; justify-content:space-between; gap:var(--space-3); margin-top:var(--space-3); }
++.mismatch-heading span { color:var(--muted); }
++.table-scroll { overflow-x:auto; margin-top:var(--space-2); }
++.mismatch-table { width:100%; border-collapse:collapse; text-align:left; }
++.mismatch-table th,.mismatch-table td { border-bottom:1px solid var(--line); padding:10px 12px; vertical-align:top; }
++.mismatch-table th { background:#f7faf6; color:var(--muted); font-size:12px; text-transform:uppercase; }
++.mismatch-table tr.mismatch-new,.mismatch-table tr.mismatch-reopened { background:#fff4e5; }
++.mismatch-actions { display:flex; flex-wrap:wrap; gap:6px; min-width:240px; }
++.mismatch-actions .ant-btn { min-height:34px; padding:0 10px; white-space:nowrap; }
++.download { margin-top:var(--space-4); }
++.logout { margin-top:var(--space-2); }
++@media (max-width:600px) {
++  .shell { padding:var(--space-5) var(--space-3); }
++  .topbar,.section-heading { flex-direction:column; }
++  .topbar > .badge { align-self:flex-start; }
++  .form-grid { grid-template-columns:1fr; }
++  .check-item { align-items:stretch; flex-direction:column; }
++  .check-item .ant-btn { width:100%; }
++}
+diff --git a/app/layout.js b/app/layout.js
+new file mode 100644
+index 0000000..fb3e6d7
+--- /dev/null
++++ b/app/layout.js
+@@ -0,0 +1,14 @@
++import './globals.css';
++
++export const metadata = {
++  title: 'NanoHome PSI Shared Tool',
++  description: 'Nộp file nguồn, xử lý mismatch và tạo PSI Final dùng chung',
++};
++
++export default function RootLayout({ children }) {
++  return (
++    <html lang="vi">
++      <body>{children}</body>
++    </html>
++  );
++}
+diff --git a/app/page.js b/app/page.js
+new file mode 100644
+index 0000000..89e74f8
+--- /dev/null
++++ b/app/page.js
+@@ -0,0 +1,318 @@
++'use client';
++
++import { useCallback, useEffect, useMemo, useState } from 'react';
++import { createClient } from '@supabase/supabase-js';
++
++const TEAM_ID = '11111111-1111-4111-8111-111111111111';
++const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
++const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
++const SOURCES = {
++  product: 'Product master',
++  purchase: 'Purchase / PO',
++  revenue: 'Revenue MISA',
++  inventory: 'Inventory',
++  preorder: 'Pre-order',
++  crm: 'CRM Sale',
++  target: 'Target',
++};
++
++async function responseMessage(response) {
++  const text = await response.text();
++  try {
++    const payload = JSON.parse(text);
++    if (Array.isArray(payload.reasons)) return payload.reasons.join('. ');
++    return payload.message || payload.error || text;
++  } catch {
++    return text || `HTTP ${response.status}`;
++  }
++}
++
++export default function Home() {
++  const supabase = useMemo(() => {
++    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
++    const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
++    return url && key ? createClient(url, key) : null;
++  }, []);
++  const [accessToken, setAccessToken] = useState('');
++  const [authChecked, setAuthChecked] = useState(false);
++  const [email, setEmail] = useState('');
++  const [password, setPassword] = useState('');
++  const [loginMessage, setLoginMessage] = useState('');
++  const [week, setWeek] = useState('2026-07');
++  const [dataAsOf, setDataAsOf] = useState('2026-07-09');
++  const [status, setStatus] = useState(null);
++  const [message, setMessage] = useState('Đang kiểm tra checklist.');
++  const [uploadingSource, setUploadingSource] = useState('');
++  const [releasing, setReleasing] = useState(false);
++
++  const api = useCallback(
++    (path, options = {}) =>
++      fetch(path, {
++        ...options,
++        cache: 'no-store',
++        headers: {
++          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
++          ...(options.headers || {}),
++        },
++      }),
++    [accessToken],
++  );
++
++  const refresh = useCallback(async () => {
++    if (!accessToken) return;
++    setMessage('Đang cập nhật trạng thái dùng chung...');
++    try {
++      const response = await api(`/api/weekly_status?team=${TEAM_ID}&week=${encodeURIComponent(week)}`);
++      if (!response.ok) {
++        setMessage(await responseMessage(response));
++        return;
++      }
++      const nextStatus = await response.json();
++      setStatus(nextStatus);
++      const owned = Array.isArray(nextStatus.owned_sources) ? nextStatus.owned_sources : Object.keys(SOURCES);
++      const mismatches = Array.isArray(nextStatus.mismatches) ? nextStatus.mismatches : [];
++      const gateReasons = Array.isArray(nextStatus.gate_reasons) ? nextStatus.gate_reasons : [];
++      if (!nextStatus.ready) {
++        setMessage(`Cần đủ ${owned.length || 7} file nguồn để tạo PSI Final.`);
++      } else if (mismatches.length) {
++        setMessage(`Còn ${mismatches.length} mismatch phải xử lý trước khi xuất PSI.`);
++      } else if (gateReasons.length) {
++        setMessage(gateReasons.join('. '));
++      } else {
++        setMessage('Đã đủ file và không còn mismatch mở. Có thể tạo PSI Final.');
++      }
++    } catch (error) {
++      setMessage(error instanceof Error ? error.message : 'Không thể tải trạng thái PSI.');
++    }
++  }, [accessToken, api, week]);
++
++  useEffect(() => {
++    if (!supabase) {
++      setLoginMessage('Thiếu cấu hình Supabase public cho Next.js.');
++      setAuthChecked(true);
++      return undefined;
++    }
++    let active = true;
++    supabase.auth.getSession().then(({ data }) => {
++      if (active) {
++        setAccessToken(data.session?.access_token || '');
++        setAuthChecked(true);
++      }
++    });
++    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
++      if (active) setAccessToken(session?.access_token || '');
++    });
++    return () => {
++      active = false;
++      data.subscription.unsubscribe();
++    };
++  }, [supabase]);
++
++  useEffect(() => {
++    if (accessToken) void refresh();
++  }, [accessToken, refresh]);
++
++  async function login(event) {
++    event.preventDefault();
++    if (!supabase) return;
++    setLoginMessage('Đang đăng nhập...');
++    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
++    if (error) {
++      setLoginMessage(error.message);
++      return;
++    }
++    setAccessToken(data.session?.access_token || '');
++    setLoginMessage('');
++  }
++
++  async function logout() {
++    if (supabase) await supabase.auth.signOut();
++    setAccessToken('');
++    setStatus(null);
++  }
++
++  async function upload(source, file) {
++    if (!file || !supabase) return;
++    if (!file.name.toLowerCase().endsWith('.xlsx') || file.size < 1 || file.size > MAX_UPLOAD_BYTES) {
++      setMessage('File phải là XLSX và không vượt quá 25 MB.');
++      return;
++    }
++    setUploadingSource(source);
++    setMessage(`Đang chuẩn bị tải ${SOURCES[source] || source}...`);
++    let stagingPath = '';
++    try {
++      const prepare = await api('/api/upload-url', {
++        method: 'POST',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify({
++          team_id: TEAM_ID,
++          filename: file.name,
++          content_type: XLSX_TYPE,
++          byte_size: file.size,
++        }),
++      });
++      if (!prepare.ok) throw new Error(await responseMessage(prepare));
++      const prepared = await prepare.json();
++      stagingPath = prepared.staging_path;
++      setMessage(`Đang tải ${SOURCES[source] || source} thẳng lên kho dữ liệu...`);
++      const { error: uploadError } = await supabase.storage
++        .from('psi-source')
++        .uploadToSignedUrl(stagingPath, prepared.upload_token, file, {
++          contentType: XLSX_TYPE,
++          cacheControl: '0',
++        });
++      if (uploadError) throw uploadError;
++
++      setMessage('Đã tải file. Đang kiểm tra dữ liệu và cập nhật mismatch...');
++      const finalize = await api('/api/weekly_upload_staged', {
++        method: 'POST',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify({
++          team_id: TEAM_ID,
++          week,
++          data_as_of: dataAsOf,
++          source_type: source,
++          filename: file.name,
++          staging_path: stagingPath,
++        }),
++      });
++      if (!finalize.ok) throw new Error(await responseMessage(finalize));
++      setMessage('Đã lưu phiên bản file và cập nhật bảng mismatch.');
++      await refresh();
++    } catch (error) {
++      setMessage(error instanceof Error ? error.message : 'Tải file thất bại.');
++    } finally {
++      setUploadingSource('');
++    }
++  }
++
++  async function resolveMismatch(mismatchId, toStatus) {
++    setMessage('Đang cập nhật mismatch...');
++    const response = await api('/api/mismatch', {
++      method: 'POST',
++      headers: { 'Content-Type': 'application/json' },
++      body: JSON.stringify({
++        mismatch_id: mismatchId,
++        to_status: toStatus,
++        comment: 'Đã kiểm tra trên PSI shared tool',
++        evidence: { source: 'web' },
++      }),
++    });
++    setMessage(response.ok ? 'Đã cập nhật mismatch.' : await responseMessage(response));
++    await refresh();
++  }
++
++  async function release() {
++    setReleasing(true);
++    setMessage('Đang tạo PSI Final...');
++    try {
++      const response = await api('/api/release', {
++        method: 'POST',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify({ reporting_period: week }),
++      });
++      if (!response.ok) throw new Error(await responseMessage(response));
++      const record = await response.json();
++      setStatus((current) => ({ ...current, download_url: record.signed_url || current?.download_url }));
++      setMessage('Đã tạo PSI Final. Link tải có hiệu lực trong 5 phút.');
++    } catch (error) {
++      setMessage(error instanceof Error ? error.message : 'Không thể tạo PSI Final.');
++    } finally {
++      setReleasing(false);
++    }
++  }
++
++  const ownedSources = Array.isArray(status?.owned_sources) ? status.owned_sources : Object.keys(SOURCES);
++  const mismatches = Array.isArray(status?.mismatches) ? status.mismatches : [];
++  const releaseAllowed = Boolean(status?.release_allowed);
++
++  return (
++    <main className="shell">
++      <header className="topbar">
++        <div className="hero-copy">
++          <p className="eyebrow">PSI / CÔNG CỤ DÙNG CHUNG</p>
++          <h1>Danh sách file cần nộp</h1>
++          <p className="lead">Các team tải đủ 7 file nguồn theo thời điểm của mình. Mỗi lần tải lại được lưu thành một phiên bản mới.</p>
++        </div>
++        <span className={`ant-tag badge ${accessToken ? 'ant-tag-green' : 'ant-tag-gold'}`}>
++          {!authChecked ? 'ĐANG KIỂM TRA PHIÊN' : accessToken ? 'ĐÃ ĐĂNG NHẬP' : 'YÊU CẦU ĐĂNG NHẬP'}
++        </span>
++      </header>
++
++      {!accessToken ? (
++        <section className="card">
++          <div className="section-heading">
++            <div><p className="eyebrow">XÁC THỰC</p><h2>Đăng nhập PSI</h2><p className="hint">Dùng tài khoản purchase, sale, accounting hoặc tech đã được cấp.</p></div>
++          </div>
++          <form className="form-grid" onSubmit={login} noValidate>
++            <label className="ant-form-item">Email<input className="ant-input" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
++            <label className="ant-form-item">Mật khẩu<input className="ant-input" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
++            <button className="ant-btn ant-btn-primary" type="submit">Đăng nhập</button>
++          </form>
++          <p className="hint" role="status" aria-live="polite">{loginMessage}</p>
++        </section>
++      ) : (
++        <>
++          <div className="notice" role="note"><strong>Lưu ý:</strong> Mọi tài khoản cùng xem trạng thái chung. Mismatch mới phải được xử lý hoặc ghi nhận trước khi xuất PSI Final.</div>
++          <section className="card">
++            <div className="section-heading">
++              <div><p className="eyebrow">01 / PHẠM VI</p><h2>Kỳ báo cáo dùng chung</h2></div>
++              <span className={`badge ${releaseAllowed ? 'ready' : 'quiet'}`}>{releaseAllowed ? 'PSI sẵn sàng' : !status?.ready ? 'Chưa đủ file' : mismatches.length ? 'Cần xử lý mismatch' : 'Chưa đạt điều kiện xuất'}</span>
++            </div>
++            <div className="form-grid">
++              <label className="ant-form-item">Workspace<select className="ant-select-selector" value={TEAM_ID} disabled><option value={TEAM_ID}>NanoHome PSI</option></select></label>
++              <label className="ant-form-item">Tháng báo cáo<input className="ant-input" type="month" value={week} onChange={(event) => setWeek(event.target.value)} required /></label>
++              <label className="ant-form-item">Ngày dữ liệu<input className="ant-input" type="date" value={dataAsOf} onChange={(event) => setDataAsOf(event.target.value)} required /></label>
++            </div>
++          </section>
++
++          <section className="card">
++            <div className="section-heading"><div><p className="eyebrow">02 / CHECKLIST</p><h2>File bắt buộc</h2><p className="hint">Tất cả team nhìn cùng một checklist và lịch sử phiên bản.</p></div><button className="ant-btn ant-btn-default" type="button" onClick={refresh}>Cập nhật</button></div>
++            <div className="checklist">
++              {ownedSources.map((source) => {
++                const item = status?.files?.[source] || { status: 'missing' };
++                const busy = uploadingSource === source;
++                return (
++                  <div className="check-item" key={source}>
++                    <div><strong>{SOURCES[source] || source}</strong><small>{item.status === 'uploaded' ? `Đã nộp · phiên bản ${item.version} · ${item.filename || ''}` : 'Chưa có file'}</small></div>
++                    <label className={`ant-btn ant-btn-default file-button ${busy ? 'disabled' : ''}`}>
++                      {busy ? 'Đang xử lý...' : item.status === 'uploaded' ? 'Tải lại' : 'Chọn file'}
++                      <input type="file" accept=".xlsx" hidden disabled={Boolean(uploadingSource)} onChange={(event) => upload(source, event.target.files?.[0])} />
++                    </label>
++                  </div>
++                );
++              })}
++            </div>
++          </section>
++
++          <section className="card result-card">
++            <div className="section-heading"><div><p className="eyebrow">03 / PSI FINAL</p><h2>Kết quả tháng</h2></div><button className="ant-btn ant-btn-primary" type="button" disabled={!releaseAllowed || releasing} onClick={release}>{releasing ? 'Đang tạo...' : 'Xuất PSI Final'}</button></div>
++            <p className="hint" role="status" aria-live="polite">{message}</p>
++            <div className="diagnostics" aria-live="polite">
++              {mismatches.length ? (
++                <>
++                  <div className="mismatch-heading"><strong>{mismatches.length} mismatch mới cần kiểm tra</strong><span>Phải xử lý trước khi xuất PSI</span></div>
++                  <div className="table-scroll">
++                    <table className="mismatch-table">
++                      <thead><tr><th>File nguồn</th><th>Sheet / dòng</th><th>Mã</th><th>Mô tả</th><th>Lỗi</th><th>Trạng thái</th><th>Xử lý</th></tr></thead>
++                      <tbody>
++                        {mismatches.map((row) => (
++                          <tr className={`mismatch-${row.status}`} key={row.id}>
++                            <td>{row.file || row.source_type}</td><td>{row.sheet} / {row.row}</td><td>{row.code || row.record_key}</td><td>{row.description}</td><td>{row.issue}</td><td>{row.status}</td>
++                            <td><div className="mismatch-actions"><button className="ant-btn ant-btn-default" type="button" onClick={() => resolveMismatch(row.id, 'resolved')}>Đã sửa</button><button className="ant-btn ant-btn-default" type="button" onClick={() => resolveMismatch(row.id, 'known')}>Đã ghi nhận</button><button className="ant-btn ant-btn-default" type="button" onClick={() => resolveMismatch(row.id, 'ignored')}>Bỏ qua</button></div></td>
++                          </tr>
++                        ))}
++                      </tbody>
++                    </table>
++                  </div>
++                </>
++              ) : <p className="hint">Không có mismatch mới. Các case đã biết hoặc đã xử lý được ẩn khỏi bảng.</p>}
++            </div>
++            {status?.download_url ? <a className="ant-btn ant-btn-primary download" href={status.download_url}>Tải PSI Final</a> : null}
++          </section>
++          <button className="ant-btn ant-btn-default logout" type="button" onClick={logout}>Đăng xuất</button>
++        </>
++      )}
++    </main>
++  );
++}
+diff --git a/package-lock.json b/package-lock.json
+new file mode 100644
+index 0000000..6100ee9
+--- /dev/null
++++ b/package-lock.json
+@@ -0,0 +1,1109 @@
++{
++  "name": "amis-review-psi-shared-tool",
++  "version": "1.0.0",
++  "lockfileVersion": 3,
++  "requires": true,
++  "packages": {
++    "": {
++      "name": "amis-review-psi-shared-tool",
++      "version": "1.0.0",
++      "dependencies": {
++        "@supabase/supabase-js": "2.110.8",
++        "next": "16.2.11",
++        "react": "19.2.8",
++        "react-dom": "19.2.8"
++      },
++      "engines": {
++        "node": ">=20.9.0"
++      }
++    },
++    "node_modules/@emnapi/runtime": {
++      "version": "1.11.2",
++      "resolved": "https://registry.npmjs.org/@emnapi/runtime/-/runtime-1.11.2.tgz",
++      "integrity": "sha512-kyOl3X0DuTiT1h2ft8r2fYO8JYtU9a9Xis/zBSiGArNaagCOWx90N1k2wxp18czFDH+OgcWGb5ZP/XMt3dcyPA==",
++      "license": "MIT",
++      "optional": true,
++      "dependencies": {
++        "tslib": "^2.4.0"
++      }
++    },
++    "node_modules/@img/colour": {
++      "version": "1.1.0",
++      "resolved": "https://registry.npmjs.org/@img/colour/-/colour-1.1.0.tgz",
++      "integrity": "sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==",
++      "license": "MIT",
++      "optional": true,
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@img/sharp-darwin-arm64": {
++      "version": "0.35.3",
++      "resolved": "https://registry.npmjs.org/@img/sharp-darwin-arm64/-/sharp-darwin-arm64-0.35.3.tgz",
++      "integrity": "sha512-RMnFX7YQsMoh7lWfcM4NEHHymBX/rLuKNPVM84XE9ONPcaSCDgE7CHIHpSgPcO2xcRthgBy1HfNO319mwhIAkg==",
++      "cpu": [
++        "arm64"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-darwin-arm64": "1.3.2"
++      }
++    },
++    "node_modules/@img/sharp-darwin-x64": {
++      "version": "0.35.3",
++      "resolved": "https://registry.npmjs.org/@img/sharp-darwin-x64/-/sharp-darwin-x64-0.35.3.tgz",
++      "integrity": "sha512-Xo+5uFBtLN0BKqieTxiFzFPQAUlBbbH5iBKyRX/z1JrbnYsHTfKJnUfL8+p2TPXr1pXqao4eeL4Rl144uDpK9w==",
++      "cpu": [
++        "x64"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-darwin-x64": "1.3.2"
++      }
++    },
++    "node_modules/@img/sharp-freebsd-wasm32": {
++      "version": "0.35.3",
++      "resolved": "https://registry.npmjs.org/@img/sharp-freebsd-wasm32/-/sharp-freebsd-wasm32-0.35.3.tgz",
++      "integrity": "sha512-lUxcqWIj2wMQ9BrwNjngcr1gWUr5xgaGThBRqPPalIC2n67Cqj1uPh8NnA/ZhAg8hUbKl+kVHKwgUIwe6ZYPrg==",
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "freebsd"
++      ],
++      "dependencies": {
++        "@img/sharp-wasm32": "0.35.3"
++      },
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-darwin-arm64": {
++      "version": "1.3.2",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-darwin-arm64/-/sharp-libvips-darwin-arm64-1.3.2.tgz",
++      "integrity": "sha512-9J6ypZFpQBj4YnePGoq/S38w6nz+vqg5WZLrLGY4YuSemdMq47GMLBPO42MzwdGwpg/agZ7xzZcFHa48xlywfg==",
++      "cpu": [
++        "arm64"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-darwin-x64": {
++      "version": "1.3.2",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-darwin-x64/-/sharp-libvips-darwin-x64-1.3.2.tgz",
++      "integrity": "sha512-m2pW1n6cns9VaubNwsZ+c3CRYjxNQWgJ5gPlnL1nbBcpkBvFm6SCFN5o0psFHI8w9n11NKhFkeEDns98tiqbEw==",
++      "cpu": [
++        "x64"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-linux-arm": {
++      "version": "1.3.2",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-arm/-/sharp-libvips-linux-arm-1.3.2.tgz",
++      "integrity": "sha512-1eMLzy92I4J6rmi4mAT8yC3HxOtniyGELlzGbNMLLeqe052ahFQ0h6LFq+lh5DsDIdYViIDst08abvSbcEdLXQ==",
++      "cpu": [
++        "arm"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-linux-arm64": {
++      "version": "1.3.2",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-arm64/-/sharp-libvips-linux-arm64-1.3.2.tgz",
++      "integrity": "sha512-dqVSFynCox4C/J8kT16V7SIFAns0IjgLwkvYT7p8LQVmJ5OS5b6tI9IGflxTeuBS//zXeFIUbwt5dwxyZ17cnA==",
++      "cpu": [
++        "arm64"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-linux-ppc64": {
++      "version": "1.3.2",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-ppc64/-/sharp-libvips-linux-ppc64-1.3.2.tgz",
++      "integrity": "sha512-3z0NHDxD6n5I9gc05U1eW1AyRm+Gznzq3naMrthPNqE6oYykcogW0l/jfpJdjYnuNl8R7yI9pNbE1XiUeyq0Aw==",
++      "cpu": [
++        "ppc64"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-linux-riscv64": {
++      "version": "1.3.2",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-riscv64/-/sharp-libvips-linux-riscv64-1.3.2.tgz",
++      "integrity": "sha512-bsb4rI+NldGOsXuej2r8OdSS8+zXDVaCWxyWrcv6kneTOlgAHtZABRzBBCwdsPiD90J4myNJuHpg6kA20ImW/w==",
++      "cpu": [
++        "riscv64"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-linux-s390x": {
++      "version": "1.3.2",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-s390x/-/sharp-libvips-linux-s390x-1.3.2.tgz",
++      "integrity": "sha512-/ABshyj8gCpyIrNXnHn4LorDJ0HHm1VhXPBlxZ8zAtfVPAaSafXPGn+sUSIRiwaSBy0mmFjSjiXI5mkcwdChKQ==",
++      "cpu": [
++        "s390x"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-linux-x64": {
++      "version": "1.3.2",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-x64/-/sharp-libvips-linux-x64-1.3.2.tgz",
++      "integrity": "sha512-ITPEtgffGJ0S6G9dRyw/366tJQqFRcHWPHhC+Stpg3Z8AEMrDrTr2lhdz4f/Y/HMbRh//7Z5mBzEpVdi62Oc3w==",
++      "cpu": [
++        "x64"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-linuxmusl-arm64": {
++      "version": "1.3.2",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linuxmusl-arm64/-/sharp-libvips-linuxmusl-arm64-1.3.2.tgz",
++      "integrity": "sha512-zE9EdiUzUmg5mDT5a1rk5fYJ6GWPloTwWBYDS14naqHsL+EaMpDj1AWnpLgh3u0YCORv2Tt50wrcrpYqkP97Kw==",
++      "cpu": [
++        "arm64"
++      ],
++      "libc": [
++        "musl"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-linuxmusl-x64": {
++      "version": "1.3.2",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linuxmusl-x64/-/sharp-libvips-linuxmusl-x64-1.3.2.tgz",
++      "integrity": "sha512-m0lrLiUt+lBYnCFr8qV/65yMR4E/c7/wf78I5eKTdkEakFAlZ9QlzEM3QIhhAwVeUhLAHLcCq7a7Vszq/oFNZQ==",
++      "cpu": [
++        "x64"
++      ],
++      "libc": [
++        "musl"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-linux-arm": {
++      "version": "0.35.3",
++      "resolved": "https://registry.npmjs.org/@img/sharp-linux-arm/-/sharp-linux-arm-0.35.3.tgz",
++      "integrity": "sha512-affVWCTLooy8TSxbDx2qkzuDeaWLNVBA+P//FNBirHsXpP2fuBhk5AuboYUnrDnzoXes8GFjpTx0SBFOCRg+FA==",
++      "cpu": [
++        "arm"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-linux-arm": "1.3.2"
++      }
++    },
++    "node_modules/@img/sharp-linux-arm64": {
++      "version": "0.35.3",
++      "resolved": "https://registry.npmjs.org/@img/sharp-linux-arm64/-/sharp-linux-arm64-0.35.3.tgz",
++      "integrity": "sha512-QgKDspHPnrU+GQ55XPhGwyhC8acLVOOSyAvo1oVfFmrIXLkDNmGWzAfDZ4xK8oSA1qBQrALcHX0G5UZni/SuFQ==",
++      "cpu": [
++        "arm64"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-linux-arm64": "1.3.2"
++      }
++    },
++    "node_modules/@img/sharp-linux-ppc64": {
++      "version": "0.35.3",
++      "resolved": "https://registry.npmjs.org/@img/sharp-linux-ppc64/-/sharp-linux-ppc64-0.35.3.tgz",
++      "integrity": "sha512-sMd8rDxmpLOwv/7N44klFjOD5DUO7FLdjiXDI0hoxYaf7Ar262dQIEkosE98bps+5HPLtp/EvNqeqQtOycP/IA==",
++      "cpu": [
++        "ppc64"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-linux-ppc64": "1.3.2"
++      }
++    },
++    "node_modules/@img/sharp-linux-riscv64": {
++      "version": "0.35.3",
++      "resolved": "https://registry.npmjs.org/@img/sharp-linux-riscv64/-/sharp-linux-riscv64-0.35.3.tgz",
++      "integrity": "sha512-0Eob78yjlYPfL5vMNWAW55l3R9Y6BQS/gOfe0ZcP9mEz9ohhKSt4im1hayiknXgf8AWrFqMvJcKIdmLmEe7yeQ==",
++      "cpu": [
++        "riscv64"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-linux-riscv64": "1.3.2"
++      }
++    },
++    "node_modules/@img/sharp-linux-s390x": {
++      "version": "0.35.3",
++      "resolved": "https://registry.npmjs.org/@img/sharp-linux-s390x/-/sharp-linux-s390x-0.35.3.tgz",
++      "integrity": "sha512-KgAxQ0DxpNOq1rG2t5cgTgShJFGSuU7XO45cqC+1NVOuZnP6tlgZRuSYOfNupGkHID0o3cJOsw4DVeJpMovcGw==",
++      "cpu": [
++        "s390x"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-linux-s390x": "1.3.2"
++      }
++    },
++    "node_modules/@img/sharp-linux-x64": {
++      "version": "0.35.3",
++      "resolved": "https://registry.npmjs.org/@img/sharp-linux-x64/-/sharp-linux-x64-0.35.3.tgz",
++      "integrity": "sha512-8pqvxubL2PGdhlPy6GLqzDYMUjyRmKAwKHYKixpdJYBUK7PJ0C029XdsnpFIdgRZG68fZiGdHVWcKPvtiPB4cA==",
++      "cpu": [
++        "x64"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-linux-x64": "1.3.2"
++      }
++    },
++    "node_modules/@img/sharp-linuxmusl-arm64": {
++      "version": "0.35.3",
++      "resolved": "https://registry.npmjs.org/@img/sharp-linuxmusl-arm64/-/sharp-linuxmusl-arm64-0.35.3.tgz",
++      "integrity": "sha512-Vz0iQjzzcSX3HCbfwFfCSG/9SCIqyO0mH2sXyiHaAYfBk0cRsCWXRyQYX0ovCK/PAQBbTzQ0dsPQHh5MAFL59w==",
++      "cpu": [
++        "arm64"
++      ],
++      "libc": [
++        "musl"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-linuxmusl-arm64": "1.3.2"
++      }
++    },
++    "node_modules/@img/sharp-linuxmusl-x64": {
++      "version": "0.35.3",
++      "resolved": "https://registry.npmjs.org/@img/sharp-linuxmusl-x64/-/sharp-linuxmusl-x64-0.35.3.tgz",
++      "integrity": "sha512-6O1NPKcDVj9QEdg7Hx549EX8U0rp6yXQERqru6yRN7fGBn32UvIRJUlWnk+8xDCiG76hXVBbX82NZ/ZKr0euIg==",
++      "cpu": [
++        "x64"
++      ],
++      "libc": [
++        "musl"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-linuxmusl-x64": "1.3.2"
++      }
++    },
++    "node_modules/@img/sharp-wasm32": {
++      "version": "0.35.3",
++      "resolved": "https://registry.npmjs.org/@img/sharp-wasm32/-/sharp-wasm32-0.35.3.tgz",
++      "integrity": "sha512-cZ0XkcYGpHZkqW6iCkqTcmUC0CD9DhD5d/qeZlZkfRBn6GnHniZXLUo5+9xw8Iv76YE6LQFN9YNBlKREcCG76w==",
++      "license": "Apache-2.0 AND LGPL-3.0-or-later AND MIT",
++      "optional": true,
++      "dependencies": {
++        "@emnapi/runtime": "^1.11.1"
++      },
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-webcontainers-wasm32": {
++      "version": "0.35.3",
++      "resolved": "https://registry.npmjs.org/@img/sharp-webcontainers-wasm32/-/sharp-webcontainers-wasm32-0.35.3.tgz",
++      "integrity": "sha512-2rnq7bX3NzeR2T4YWgz8qiG4h3TSdMe+vN1iQXpJleSJ3SM5zQ8Fy2SyyXAWlbxpEZ2Y+Z4u1BePgJEYbSy80Q==",
++      "cpu": [
++        "wasm32"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "dependencies": {
++        "@img/sharp-wasm32": "0.35.3"
++      },
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-win32-arm64": {
++      "version": "0.35.3",
++      "resolved": "https://registry.npmjs.org/@img/sharp-win32-arm64/-/sharp-win32-arm64-0.35.3.tgz",
++      "integrity": "sha512-4bPwFdMbeC4JQ8L8LOyWp6nsHcboP5fxkp6iPOXz2Vg49R42TuMs2whkJ5OAP4/Ul035qOzy0AecOF9VOscn4w==",
++      "cpu": [
++        "arm64"
++      ],
++      "license": "Apache-2.0 AND LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-win32-ia32": {
++      "version": "0.35.3",
++      "resolved": "https://registry.npmjs.org/@img/sharp-win32-ia32/-/sharp-win32-ia32-0.35.3.tgz",
++      "integrity": "sha512-r53mXsBN6lFUDiST764SvgwUdHAqM4rPAiDzAmf4fLoB6X/rkfyTrLCg6+g17wJJiCmB3JYgHuUldCWUIRFSXw==",
++      "cpu": [
++        "ia32"
++      ],
++      "license": "Apache-2.0 AND LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": "^20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-win32-x64": {
++      "version": "0.35.3",
++      "resolved": "https://registry.npmjs.org/@img/sharp-win32-x64/-/sharp-win32-x64-0.35.3.tgz",
++      "integrity": "sha512-D4y1vNeZrIIJCN+uHaWVtH86B+aCrdMYYjicy9pXHvbGZeGYLLSd3wdVuC37FxVXlU1ARsk84eKWfWMXGYEqvA==",
++      "cpu": [
++        "x64"
++      ],
++      "license": "Apache-2.0 AND LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@next/env": {
++      "version": "16.2.11",
++      "resolved": "https://registry.npmjs.org/@next/env/-/env-16.2.11.tgz",
++      "integrity": "sha512-0do5A3BJ2gxWr0ZCMcD6BhW+e595jyxdTl3rXTS6lOtD8ektMiW6CO+EPwt1Eca1DBnm90r/7GdiKWBKxH++DA==",
++      "license": "MIT"
++    },
++    "node_modules/@next/swc-darwin-arm64": {
++      "version": "16.2.11",
++      "resolved": "https://registry.npmjs.org/@next/swc-darwin-arm64/-/swc-darwin-arm64-16.2.11.tgz",
++      "integrity": "sha512-wryL4pjKmDwGv2ox6+GZDFxvmtSRLqApBR8kL1j4+vhB7Z5vJC/zAnXpiR9Xkfzl0AS8WLMnsuGV/UKI67/rrw==",
++      "cpu": [
++        "arm64"
++      ],
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@next/swc-darwin-x64": {
++      "version": "16.2.11",
++      "resolved": "https://registry.npmjs.org/@next/swc-darwin-x64/-/swc-darwin-x64-16.2.11.tgz",
++      "integrity": "sha512-aZl2j4f/fLyjQvOhv0Oe9UaMAQHolYpKhctsoYzplSumKJKPUmgjcf6545aBtysLTcu994TREd0+pSgNE4ohmg==",
++      "cpu": [
++        "x64"
++      ],
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@next/swc-linux-arm64-gnu": {
++      "version": "16.2.11",
++      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-gnu/-/swc-linux-arm64-gnu-16.2.11.tgz",
++      "integrity": "sha512-5jEriyEnH/LWFy27L2ZG0XaLlyEJIjhsImEsiS9P563PKEVp2BVups/xfOucIrsvVntp11oNcZwjHvaDPYVB5g==",
++      "cpu": [
++        "arm64"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@next/swc-linux-arm64-musl": {
++      "version": "16.2.11",
++      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-musl/-/swc-linux-arm64-musl-16.2.11.tgz",
++      "integrity": "sha512-eIjcpx2fnnFSSkZDbTxy74KnokUXDjfoLClpWelfgHLf621aTqswhwXQ7GkD5K5rplrS6LZ/Bj+mVuvzluBOEg==",
++      "cpu": [
++        "arm64"
++      ],
++      "libc": [
++        "musl"
++      ],
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@next/swc-linux-x64-gnu": {
++      "version": "16.2.11",
++      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-gnu/-/swc-linux-x64-gnu-16.2.11.tgz",
++      "integrity": "sha512-8WgzpaWMs46qJT9kiV47cje86L0x/Mu9t8/Gwj+pnbgW3rETVfCnaScPjlYUwNScpOozdcIMHWmAvuZJUonR2w==",
++      "cpu": [
++        "x64"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@next/swc-linux-x64-musl": {
++      "version": "16.2.11",
++      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-musl/-/swc-linux-x64-musl-16.2.11.tgz",
++      "integrity": "sha512-I3UgPds7G4ZYnTb/H+5GBGuUT2DhAk6j0mL6A4s63RjFs74wB2hOWP0vaxsK+3NJraExt3eYEPQ/UtT0x/64Nw==",
++      "cpu": [
++        "x64"
++      ],
++      "libc": [
++        "musl"
++      ],
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@next/swc-win32-arm64-msvc": {
++      "version": "16.2.11",
++      "resolved": "https://registry.npmjs.org/@next/swc-win32-arm64-msvc/-/swc-win32-arm64-msvc-16.2.11.tgz",
++      "integrity": "sha512-n89CjtcThnjrwgJMAiI5xbqwLY51zvwC9tSlArmVndAJLYVl9T9UAdlkXTmZvE++idoXe8KdglQlhNRdUp1c6g==",
++      "cpu": [
++        "arm64"
++      ],
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@next/swc-win32-x64-msvc": {
++      "version": "16.2.11",
++      "resolved": "https://registry.npmjs.org/@next/swc-win32-x64-msvc/-/swc-win32-x64-msvc-16.2.11.tgz",
++      "integrity": "sha512-md8CLNggS1Dx9pUgApzps5uAf+N8GN9xywzmNx9vHAWo94HtBwCCqkSnhIrdfQe83Dhz8Lfo/20Nb1Zxal092w==",
++      "cpu": [
++        "x64"
++      ],
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@supabase/auth-js": {
++      "version": "2.110.8",
++      "resolved": "https://registry.npmjs.org/@supabase/auth-js/-/auth-js-2.110.8.tgz",
++      "integrity": "sha512-TQ5neTUDX2C2WmyYa03yGhLMkhdE/SkHXtK8/qxO/APUy3rsymsJCBP48p4jcN6iO2G0ow6RRexQd2mX+dSyJg==",
++      "license": "MIT",
++      "dependencies": {
++        "tslib": "2.8.1"
++      },
++      "engines": {
++        "node": ">=22.0.0"
++      }
++    },
++    "node_modules/@supabase/functions-js": {
++      "version": "2.110.8",
++      "resolved": "https://registry.npmjs.org/@supabase/functions-js/-/functions-js-2.110.8.tgz",
++      "integrity": "sha512-5yB9TLYzvv2oSQxwb0gamEvIAsuH66pVt7AM/pz03S7wN6ehD34GNgbShrccetqPedXQSz7e/1hAJ9NeEhoZVg==",
++      "license": "MIT",
++      "dependencies": {
++        "tslib": "2.8.1"
++      },
++      "engines": {
++        "node": ">=22.0.0"
++      }
++    },
++    "node_modules/@supabase/phoenix": {
++      "version": "0.4.5",
++      "resolved": "https://registry.npmjs.org/@supabase/phoenix/-/phoenix-0.4.5.tgz",
++      "integrity": "sha512-aAn9H9ovVyeApKy11OWOrrOGq8DV68yWeH4ud2lN9fzn4aO8Zb5GLL9m1pUg9nLqIcT+ZDfAcsZe0E/nqdv2lw==",
++      "license": "MIT"
++    },
++    "node_modules/@supabase/postgrest-js": {
++      "version": "2.110.8",
++      "resolved": "https://registry.npmjs.org/@supabase/postgrest-js/-/postgrest-js-2.110.8.tgz",
++      "integrity": "sha512-QeRROxl1PpOZw5Jzi7BwdN9icsycMrLlCCvsjS0hYLW+nZoaT46zdagz/glJirj8jHF4jSd5Jyipuae2cBClCw==",
++      "license": "MIT",
++      "dependencies": {
++        "tslib": "2.8.1"
++      },
++      "engines": {
++        "node": ">=22.0.0"
++      }
++    },
++    "node_modules/@supabase/realtime-js": {
++      "version": "2.110.8",
++      "resolved": "https://registry.npmjs.org/@supabase/realtime-js/-/realtime-js-2.110.8.tgz",
++      "integrity": "sha512-mwX7ituX6O31fLf+0g65rpLlNxqgnMaPltPsQwzox6jfmbfVl3tCxXrfr3HEsQcCRjpjuJG1+A0vFzP1yVjKHA==",
++      "license": "MIT",
++      "dependencies": {
++        "@supabase/phoenix": "0.4.5",
++        "tslib": "2.8.1"
++      },
++      "engines": {
++        "node": ">=22.0.0"
++      }
++    },
++    "node_modules/@supabase/storage-js": {
++      "version": "2.110.8",
++      "resolved": "https://registry.npmjs.org/@supabase/storage-js/-/storage-js-2.110.8.tgz",
++      "integrity": "sha512-CcfhkZFBLxsthgUabZKxwfsoXdrikIGsL3LsGoV3FZTqCMx/s1y49taT4jT/oya5+1IuB0sFFHw6pF0o0iJniQ==",
++      "license": "MIT",
++      "dependencies": {
++        "iceberg-js": "^0.8.1",
++        "tslib": "2.8.1"
++      },
++      "engines": {
++        "node": ">=22.0.0"
++      }
++    },
++    "node_modules/@supabase/supabase-js": {
++      "version": "2.110.8",
++      "resolved": "https://registry.npmjs.org/@supabase/supabase-js/-/supabase-js-2.110.8.tgz",
++      "integrity": "sha512-E5qzoe74zhJRv4wRcbO9eMYzeQDb/+h6c603pL8shcxLGBjTKsIF7XXj05IcNj23TLDgJN1WkMw7mwAPyu5dZg==",
++      "license": "MIT",
++      "dependencies": {
++        "@supabase/auth-js": "2.110.8",
++        "@supabase/functions-js": "2.110.8",
++        "@supabase/postgrest-js": "2.110.8",
++        "@supabase/realtime-js": "2.110.8",
++        "@supabase/storage-js": "2.110.8"
++      },
++      "engines": {
++        "node": ">=22.0.0"
++      }
++    },
++    "node_modules/@swc/helpers": {
++      "version": "0.5.15",
++      "resolved": "https://registry.npmjs.org/@swc/helpers/-/helpers-0.5.15.tgz",
++      "integrity": "sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "tslib": "^2.8.0"
++      }
++    },
++    "node_modules/baseline-browser-mapping": {
++      "version": "2.11.0",
++      "resolved": "https://registry.npmjs.org/baseline-browser-mapping/-/baseline-browser-mapping-2.11.0.tgz",
++      "integrity": "sha512-oCu2wfipvX3AePSgmOuKkIywOu+8n9psz7hXYmk56ghpu3+7KzNIBopaOs4c9BrtdnTtW30unG9GTfHo7EwERQ==",
++      "license": "Apache-2.0",
++      "bin": {
++        "baseline-browser-mapping": "dist/cli.cjs"
++      },
++      "engines": {
++        "node": ">=6.0.0"
++      }
++    },
++    "node_modules/caniuse-lite": {
++      "version": "1.0.30001806",
++      "resolved": "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001806.tgz",
++      "integrity": "sha512-72Cuvd95zbSYPKq6Fhg8eDJRlzgWDf7/mtoZv6Qe/DYNCEBdNxoA3+rZAU2ZhGCpZlns3EssFavaZomckT5Uuw==",
++      "funding": [
++        {
++          "type": "opencollective",
++          "url": "https://opencollective.com/browserslist"
++        },
++        {
++          "type": "tidelift",
++          "url": "https://tidelift.com/funding/github/npm/caniuse-lite"
++        },
++        {
++          "type": "github",
++          "url": "https://github.com/sponsors/ai"
++        }
++      ],
++      "license": "CC-BY-4.0"
++    },
++    "node_modules/client-only": {
++      "version": "0.0.1",
++      "resolved": "https://registry.npmjs.org/client-only/-/client-only-0.0.1.tgz",
++      "integrity": "sha512-IV3Ou0jSMzZrd3pZ48nLkT9DA7Ag1pnPzaiQhpW7c3RbcqqzvzzVu+L8gfqMp/8IM2MQtSiqaCxrrcfu8I8rMA==",
++      "license": "MIT"
++    },
++    "node_modules/detect-libc": {
++      "version": "2.1.2",
++      "resolved": "https://registry.npmjs.org/detect-libc/-/detect-libc-2.1.2.tgz",
++      "integrity": "sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==",
++      "license": "Apache-2.0",
++      "optional": true,
++      "engines": {
++        "node": ">=8"
++      }
++    },
++    "node_modules/iceberg-js": {
++      "version": "0.8.1",
++      "resolved": "https://registry.npmjs.org/iceberg-js/-/iceberg-js-0.8.1.tgz",
++      "integrity": "sha512-1dhVQZXhcHje7798IVM+xoo/1ZdVfzOMIc8/rgVSijRK38EDqOJoGula9N/8ZI5RD8QTxNQtK/Gozpr+qUqRRA==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=20.0.0"
++      }
++    },
++    "node_modules/nanoid": {
++      "version": "3.3.16",
++      "resolved": "https://registry.npmjs.org/nanoid/-/nanoid-3.3.16.tgz",
++      "integrity": "sha512-bzlKTyNJ7+LdGIIwy8ijFpIqEQIvafahV7eYykJ8Cvh42EdJeODoJ6gUJXpQJvej1BddH8OqTXZNE/KfbWAu8Q==",
++      "funding": [
++        {
++          "type": "github",
++          "url": "https://github.com/sponsors/ai"
++        }
++      ],
++      "license": "MIT",
++      "bin": {
++        "nanoid": "bin/nanoid.cjs"
++      },
++      "engines": {
++        "node": "^10 || ^12 || ^13.7 || ^14 || >=15.0.1"
++      }
++    },
++    "node_modules/next": {
++      "version": "16.2.11",
++      "resolved": "https://registry.npmjs.org/next/-/next-16.2.11.tgz",
++      "integrity": "sha512-B339zaqbyK8cmxhoAvLrcwoabwCP1wz21zSzfqxqXAemTu2BXnH7tQnfcglKv1vnMUIDBc+Hth7XODQriTZiRQ==",
++      "license": "MIT",
++      "dependencies": {
++        "@next/env": "16.2.11",
++        "@swc/helpers": "0.5.15",
++        "baseline-browser-mapping": "^2.9.19",
++        "caniuse-lite": "^1.0.30001579",
++        "postcss": "8.4.31",
++        "styled-jsx": "5.1.6"
++      },
++      "bin": {
++        "next": "dist/bin/next"
++      },
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "optionalDependencies": {
++        "@next/swc-darwin-arm64": "16.2.11",
++        "@next/swc-darwin-x64": "16.2.11",
++        "@next/swc-linux-arm64-gnu": "16.2.11",
++        "@next/swc-linux-arm64-musl": "16.2.11",
++        "@next/swc-linux-x64-gnu": "16.2.11",
++        "@next/swc-linux-x64-musl": "16.2.11",
++        "@next/swc-win32-arm64-msvc": "16.2.11",
++        "@next/swc-win32-x64-msvc": "16.2.11",
++        "sharp": "^0.34.5"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.1.0",
++        "@playwright/test": "^1.51.1",
++        "babel-plugin-react-compiler": "*",
++        "react": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0",
++        "react-dom": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0",
++        "sass": "^1.3.0"
++      },
++      "peerDependenciesMeta": {
++        "@opentelemetry/api": {
++          "optional": true
++        },
++        "@playwright/test": {
++          "optional": true
++        },
++        "babel-plugin-react-compiler": {
++          "optional": true
++        },
++        "sass": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/picocolors": {
++      "version": "1.1.1",
++      "resolved": "https://registry.npmjs.org/picocolors/-/picocolors-1.1.1.tgz",
++      "integrity": "sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==",
++      "license": "ISC"
++    },
++    "node_modules/postcss": {
++      "version": "8.5.21",
++      "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.21.tgz",
++      "integrity": "sha512-v4sDNP3fdNiWMfabO7OwOQdOX8TiQSztKyT1Wj0w+j7LDallJThJRBBBmzVGyYj0crMh7jlV4zepPkiNu9UwDQ==",
++      "funding": [
++        {
++          "type": "opencollective",
++          "url": "https://opencollective.com/postcss/"
++        },
++        {
++          "type": "tidelift",
++          "url": "https://tidelift.com/funding/github/npm/postcss"
++        },
++        {
++          "type": "github",
++          "url": "https://github.com/sponsors/ai"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "nanoid": "^3.3.16",
++        "picocolors": "^1.1.1",
++        "source-map-js": "^1.2.1"
++      },
++      "engines": {
++        "node": "^10 || ^12 || >=14"
++      }
++    },
++    "node_modules/react": {
++      "version": "19.2.8",
++      "resolved": "https://registry.npmjs.org/react/-/react-19.2.8.tgz",
++      "integrity": "sha512-PWaYA1L/q9u2u7xYQi+Y3L3Yfnie7XyLeaJICV1MGD6LprsBxcAqGjYyr0eY3p+QdsA+x/Irkt4Qif8D63+Sbw==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=0.10.0"
++      }
++    },
++    "node_modules/react-dom": {
++      "version": "19.2.8",
++      "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-19.2.8.tgz",
++      "integrity": "sha512-rVprimfGBG3DR+Tq0IQG2DT5PxKth1WIGDmj5yPmlzr4YBe7uyE+Du4oVqTDXZSHGGGXRtTJEGSSePyQCMBglQ==",
++      "license": "MIT",
++      "dependencies": {
++        "scheduler": "^0.27.0"
++      },
++      "peerDependencies": {
++        "react": "^19.2.8"
++      }
++    },
++    "node_modules/scheduler": {
++      "version": "0.27.0",
++      "resolved": "https://registry.npmjs.org/scheduler/-/scheduler-0.27.0.tgz",
++      "integrity": "sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==",
++      "license": "MIT"
++    },
++    "node_modules/semver": {
++      "version": "7.8.5",
++      "resolved": "https://registry.npmjs.org/semver/-/semver-7.8.5.tgz",
++      "integrity": "sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==",
++      "license": "ISC",
++      "optional": true,
++      "bin": {
++        "semver": "bin/semver.js"
++      },
++      "engines": {
++        "node": ">=10"
++      }
++    },
++    "node_modules/sharp": {
++      "version": "0.35.3",
++      "resolved": "https://registry.npmjs.org/sharp/-/sharp-0.35.3.tgz",
++      "integrity": "sha512-ej0zVHuZGHCiABXcNxeYhpRnPNPAcvbG8RMdBAhDAxLKkCRVSpK3Iyu7qbqw3JMzoj0REeM6f3tJLtVwl0023Q==",
++      "license": "Apache-2.0",
++      "optional": true,
++      "dependencies": {
++        "@img/colour": "^1.1.0",
++        "detect-libc": "^2.1.2",
++        "semver": "^7.8.5"
++      },
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-darwin-arm64": "0.35.3",
++        "@img/sharp-darwin-x64": "0.35.3",
++        "@img/sharp-freebsd-wasm32": "0.35.3",
++        "@img/sharp-libvips-darwin-arm64": "1.3.2",
++        "@img/sharp-libvips-darwin-x64": "1.3.2",
++        "@img/sharp-libvips-linux-arm": "1.3.2",
++        "@img/sharp-libvips-linux-arm64": "1.3.2",
++        "@img/sharp-libvips-linux-ppc64": "1.3.2",
++        "@img/sharp-libvips-linux-riscv64": "1.3.2",
++        "@img/sharp-libvips-linux-s390x": "1.3.2",
++        "@img/sharp-libvips-linux-x64": "1.3.2",
++        "@img/sharp-libvips-linuxmusl-arm64": "1.3.2",
++        "@img/sharp-libvips-linuxmusl-x64": "1.3.2",
++        "@img/sharp-linux-arm": "0.35.3",
++        "@img/sharp-linux-arm64": "0.35.3",
++        "@img/sharp-linux-ppc64": "0.35.3",
++        "@img/sharp-linux-riscv64": "0.35.3",
++        "@img/sharp-linux-s390x": "0.35.3",
++        "@img/sharp-linux-x64": "0.35.3",
++        "@img/sharp-linuxmusl-arm64": "0.35.3",
++        "@img/sharp-linuxmusl-x64": "0.35.3",
++        "@img/sharp-webcontainers-wasm32": "0.35.3",
++        "@img/sharp-win32-arm64": "0.35.3",
++        "@img/sharp-win32-ia32": "0.35.3",
++        "@img/sharp-win32-x64": "0.35.3"
++      },
++      "peerDependenciesMeta": {
++        "@types/node": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/source-map-js": {
++      "version": "1.2.1",
++      "resolved": "https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.1.tgz",
++      "integrity": "sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==",
++      "license": "BSD-3-Clause",
++      "engines": {
++        "node": ">=0.10.0"
++      }
++    },
++    "node_modules/styled-jsx": {
++      "version": "5.1.6",
++      "resolved": "https://registry.npmjs.org/styled-jsx/-/styled-jsx-5.1.6.tgz",
++      "integrity": "sha512-qSVyDTeMotdvQYoHWLNGwRFJHC+i+ZvdBRYosOFgC+Wg1vx4frN2/RG/NA7SYqqvKNLf39P2LSRA2pu6n0XYZA==",
++      "license": "MIT",
++      "dependencies": {
++        "client-only": "0.0.1"
++      },
++      "engines": {
++        "node": ">= 12.0.0"
++      },
++      "peerDependencies": {
++        "react": ">= 16.8.0 || 17.x.x || ^18.0.0-0 || ^19.0.0-0"
++      },
++      "peerDependenciesMeta": {
++        "@babel/core": {
++          "optional": true
++        },
++        "babel-plugin-macros": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/tslib": {
++      "version": "2.8.1",
++      "resolved": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz",
++      "integrity": "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==",
++      "license": "0BSD"
++    }
++  }
++}
+diff --git a/package.json b/package.json
+new file mode 100644
+index 0000000..0e8f925
+--- /dev/null
++++ b/package.json
+@@ -0,0 +1,23 @@
++{
++  "name": "amis-review-psi-shared-tool",
++  "version": "1.0.0",
++  "private": true,
++  "scripts": {
++    "dev": "next dev",
++    "build": "next build",
++    "start": "next start"
++  },
++  "dependencies": {
++    "@supabase/supabase-js": "2.110.8",
++    "next": "16.2.11",
++    "react": "19.2.8",
++    "react-dom": "19.2.8"
++  },
++  "engines": {
++    "node": ">=20.9.0"
++  },
++  "overrides": {
++    "postcss": "8.5.21",
++    "sharp": "0.35.3"
++  }
++}
+diff --git a/psi_engine/release_adapter.py b/psi_engine/release_adapter.py
+index fdc946b..9624aa7 100644
+--- a/psi_engine/release_adapter.py
++++ b/psi_engine/release_adapter.py
+@@ -27,8 +27,17 @@ def storage_delete(repository: ReleaseStorage, bucket: str, path: str, token: st
+     bearer = repository.key
+     if not bearer:
+         raise UploadAuthorizationError("authenticated bearer is required")
+-    object_path = quote(f"{bucket}/{path}", safe="/")
+-    request = Request(f"{repository.url}/storage/v1/object/{object_path}", method="DELETE", headers={"apikey": repository.key, "Authorization": f"Bearer {bearer}"})
++    bucket_path = quote(bucket, safe="")
++    request = Request(
++        f"{repository.url}/storage/v1/object/{bucket_path}",
++        data=json.dumps({"prefixes": [path]}).encode(),
++        method="DELETE",
++        headers={
++            "apikey": repository.key,
++            "Authorization": f"Bearer {bearer}",
++            "Content-Type": "application/json",
++        },
++    )
+     with urlopen(request, timeout=10):
+         pass
+ 
+diff --git a/requirements.txt b/requirements.txt
+new file mode 100644
+index 0000000..61d7845
+--- /dev/null
++++ b/requirements.txt
+@@ -0,0 +1 @@
++openpyxl==3.1.5
+diff --git a/tests/test_weekly_supabase_routes.py b/tests/test_weekly_supabase_routes.py
+index 8040775..8dc044c 100644
+--- a/tests/test_weekly_supabase_routes.py
++++ b/tests/test_weekly_supabase_routes.py
+@@ -1,3 +1,4 @@
++import json
+ import sys
+ import threading
+ from http.client import HTTPConnection
+@@ -8,6 +9,7 @@ from urllib.error import HTTPError
+ ROOT = Path(__file__).resolve().parents[1]
+ sys.path.insert(0, str(ROOT / "web"))
+ import server  # noqa: E402
++import weekly_routes  # noqa: E402
+ 
+ 
+ class _Persisted:
+@@ -84,3 +86,116 @@ def test_supabase_upload_returns_controlled_error_when_server_role_is_denied(mon
+         httpd.shutdown()
+         httpd.server_close()
+         thread.join(timeout=2)
++
++
++def test_staged_upload_downloads_persists_and_cleans_up(monkeypatch) -> None:
++    repository = server.SupabaseRepository("https://psi.example.test", "service-role-key")
++    store = server.PsiMemoryStore(repository)
++    observed: dict[str, object] = {}
++    monkeypatch.setattr(repository, "authenticated_actor", lambda token: "actor-from-bearer")
++    monkeypatch.setattr(
++        repository,
++        "lookup",
++        lambda table, filters, token="": [{"team_id": "team-a"}] if table == "team_memberships" else [],
++    )
++    monkeypatch.setattr(
++        weekly_routes,
++        "storage_download",
++        lambda repo, bucket, path, token: observed.update(download=(bucket, path, token)) or b"fixture",
++    )
++    monkeypatch.setattr(
++        weekly_routes,
++        "storage_delete",
++        lambda repo, bucket, path, token: observed.update(delete=(bucket, path, token)),
++    )
++
++    def persist(request: server.UploadRequest, auth_token: str) -> _Persisted:
++        observed["request"] = request
++        observed["auth_token"] = auth_token
++        return _Persisted()
++
++    monkeypatch.setattr(store, "persist", persist)
++    monkeypatch.setattr(server.H, "store", store)
++    path = "team-a/staging/11111111-1111-4111-8111-111111111111.xlsx"
++    payload = json.dumps({
++        "team_id": "team-a",
++        "week": "2026-07",
++        "data_as_of": "2026-07-09",
++        "source_type": "product",
++        "filename": "product_fixture.xlsx",
++        "staging_path": path,
++    }).encode()
++    httpd = server.ThreadingHTTPServer(("127.0.0.1", 0), server.H)
++    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
++    thread.start()
++    try:
++        connection = HTTPConnection("127.0.0.1", httpd.server_address[1])
++        connection.request(
++            "POST",
++            "/api/weekly_upload_staged",
++            body=payload,
++            headers={"Authorization": "Bearer external-session", "Content-Type": "application/json"},
++        )
++        response = connection.getresponse()
++        response.read()
++        connection.close()
++
++        assert response.status == 201
++        request = observed["request"]
++        assert isinstance(request, server.UploadRequest)
++        assert request.actor_id == "actor-from-bearer"
++        assert request.filename == "product_fixture.xlsx"
++        assert request.content == b"fixture"
++        assert observed["download"] == ("psi-source", path, "external-session")
++        assert observed["delete"] == ("psi-source", path, "external-session")
++        assert observed["auth_token"] == "external-session"
++    finally:
++        httpd.shutdown()
++        httpd.server_close()
++        thread.join(timeout=2)
++
++
++def test_staged_upload_rejects_path_outside_authenticated_team(monkeypatch) -> None:
++    repository = server.SupabaseRepository("https://psi.example.test", "service-role-key")
++    store = server.PsiMemoryStore(repository)
++    monkeypatch.setattr(repository, "authenticated_actor", lambda token: "actor-from-bearer")
++    monkeypatch.setattr(
++        repository,
++        "lookup",
++        lambda table, filters, token="": [{"team_id": "team-a"}] if table == "team_memberships" else [],
++    )
++    monkeypatch.setattr(
++        weekly_routes,
++        "storage_download",
++        lambda *args: (_ for _ in ()).throw(AssertionError("invalid staging path must not be downloaded")),
++    )
++    monkeypatch.setattr(server.H, "store", store)
++    payload = json.dumps({
++        "team_id": "team-a",
++        "week": "2026-07",
++        "data_as_of": "2026-07-09",
++        "source_type": "product",
++        "filename": "product_fixture.xlsx",
++        "staging_path": "other-team/staging/11111111-1111-4111-8111-111111111111.xlsx",
++    }).encode()
++    httpd = server.ThreadingHTTPServer(("127.0.0.1", 0), server.H)
++    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
++    thread.start()
++    try:
++        connection = HTTPConnection("127.0.0.1", httpd.server_address[1])
++        connection.request(
++            "POST",
++            "/api/weekly_upload_staged",
++            body=payload,
++            headers={"Authorization": "Bearer external-session", "Content-Type": "application/json"},
++        )
++        response = connection.getresponse()
++        body = response.read()
++        connection.close()
++
++        assert response.status == 400
++        assert body == b"staging_path is invalid"
++    finally:
++        httpd.shutdown()
++        httpd.server_close()
++        thread.join(timeout=2)
+diff --git a/vercel.json b/vercel.json
+new file mode 100644
+index 0000000..d5e2bd0
+--- /dev/null
++++ b/vercel.json
+@@ -0,0 +1,10 @@
++{
++  "$schema": "https://openapi.vercel.sh/vercel.json",
++  "framework": "nextjs",
++  "fluid": true,
++  "functions": {
++    "api/*.py": {
++      "maxDuration": 300
++    }
++  }
++}
+diff --git a/web/server.py b/web/server.py
+index 109247b..2c1e508 100644
+--- a/web/server.py
++++ b/web/server.py
+@@ -82,7 +82,7 @@ class H(WeeklyRoutesMixin, ReleaseRoutesMixin, BaseHTTPRequestHandler):
+         if request_path == "/api/dashboard":
+             self.dashboard()
+             return
+-        if request_path == "/api/weekly-status":
++        if request_path in {"/api/weekly-status", "/api/weekly_status"}:
+             self.weekly_status()
+             return
+         if request_path.startswith("/api/download/"):
+@@ -129,19 +129,23 @@ class H(WeeklyRoutesMixin, ReleaseRoutesMixin, BaseHTTPRequestHandler):
+         self.send(200, json.dumps({"token": token, "role": role}).encode(), "application/json")
+ 
+     def do_POST(self) -> None:
+-        if self.path == "/api/select":
++        request_path = urlsplit(self.path).path
++        if request_path == "/api/select":
+             self.select_snapshot()
+             return
+-        if self.path == "/api/release":
++        if request_path == "/api/release":
+             self.release()
+             return
+-        if self.path == "/api/persist":
++        if request_path == "/api/persist":
+             self.persist_upload()
+             return
+-        if self.path == "/api/weekly-upload":
++        if request_path == "/api/weekly-upload":
+             self.persist_upload()
+             return
+-        if self.path == "/api/mismatch":
++        if request_path == "/api/weekly_upload_staged":
++            self.persist_staged_upload()
++            return
++        if request_path == "/api/mismatch":
+             self.mismatch_action()
+             return
+         body = self.rfile.read(int(self.headers.get("Content-Length", "0")))
+diff --git a/web/weekly_routes.py b/web/weekly_routes.py
+index d44707d..296fee8 100644
+--- a/web/weekly_routes.py
++++ b/web/weekly_routes.py
+@@ -2,13 +2,16 @@ from __future__ import annotations
+ 
+ import json
+ from email.parser import BytesParser
++from pathlib import PurePosixPath
+ from urllib.error import HTTPError
+ from email.policy import default
+ from urllib.parse import parse_qs, urlsplit
++from uuid import UUID
+ 
+ from psi_engine.release import ReleaseRequest
+-from psi_engine.release_adapter import storage_signed_download
++from psi_engine.release_adapter import storage_delete, storage_download, storage_signed_download
+ from psi_engine.persistence import (
++    ALLOWED_CONTENT_TYPE,
+     PsiMemoryRepository,
+     REQUIRED_SOURCES,
+     SupabaseRepository,
+@@ -171,5 +174,92 @@ class WeeklyRoutesMixin:
+             return
+         self.send(201, json.dumps(persisted.to_json(), ensure_ascii=False).encode(), "application/json")
+ 
++    def persist_staged_upload(self) -> None:
++        token = self.headers.get("Authorization", "").removeprefix("Bearer ").strip()
++        repository = self.store.repository
++        if not isinstance(repository, SupabaseRepository):
++            self.send(400, b"staged upload requires Supabase storage", "text/plain")
++            return
++
++        cleanup_path = ""
++        try:
++            length = int(self.headers.get("Content-Length", "0"))
++            if length < 2 or length > 64 * 1024:
++                raise UploadValidationError("upload metadata size is invalid")
++            payload = json.loads(self.rfile.read(length).decode("utf-8"))
++            if not isinstance(payload, dict):
++                raise UploadValidationError("upload metadata is invalid")
++
++            actor_id = repository.authenticated_actor(token)
++            team_id = str(payload["team_id"])
++            memberships = repository.lookup(
++                "team_memberships", {"profile_id": actor_id, "team_id": team_id}, token
++            )
++            if not memberships:
++                self.send(403, b"team membership is required", "text/plain")
++                return
++
++            staging_path = str(payload["staging_path"])
++            parsed_path = PurePosixPath(staging_path)
++            parts = parsed_path.parts
++            if (
++                staging_path != parsed_path.as_posix()
++                or len(parts) != 3
++                or parts[0] != team_id
++                or parts[1] != "staging"
++                or parsed_path.suffix.lower() != ".xlsx"
++            ):
++                raise UploadValidationError("staging_path is invalid")
++            try:
++                UUID(parsed_path.stem)
++            except ValueError as error:
++                raise UploadValidationError("staging_path is invalid") from error
++
++            filename = str(payload["filename"])
++            if PurePosixPath(filename).name != filename or not filename.lower().endswith(".xlsx"):
++                raise UploadValidationError("filename must be a safe XLSX path component")
++            week = str(payload["week"])
++            data_as_of = str(payload["data_as_of"])
++            source_type = str(payload["source_type"])
++
++            cleanup_path = staging_path
++            content = storage_download(repository, "psi-source", staging_path, token)
++            persisted = self.store.persist(
++                UploadRequest(
++                    team_id=team_id,
++                    actor_id=actor_id,
++                    reporting_period=week,
++                    data_as_of=data_as_of,
++                    source_type=source_type,
++                    filename=filename,
++                    content=content,
++                    content_type=ALLOWED_CONTENT_TYPE,
++                ),
++                auth_token=token,
++            )
++        except KeyError:
++            self.send(400, b"required metadata is missing", "text/plain")
++            return
++        except UploadAuthorizationError as error:
++            self.send(401, str(error).encode(), "text/plain")
++            return
++        except HTTPError as error:
++            if error.code in (401, 403):
++                self.send(403, b"Supabase persistence is not authorized", "text/plain")
++            else:
++                self.send(502, b"Supabase staged upload request failed", "text/plain")
++            return
++        except (TypeError, ValueError, UnicodeDecodeError, UploadValidationError) as error:
++            self.send(400, (str(error) or "upload metadata is invalid").encode(), "text/plain")
++            return
++        finally:
++            if cleanup_path:
++                try:
++                    storage_delete(repository, "psi-source", cleanup_path, token)
++                except (HTTPError, OSError, UploadAuthorizationError):
++                    pass
++
++        self.send(201, json.dumps(persisted.to_json(), ensure_ascii=False).encode(), "application/json")
++
+     def _query(self) -> dict[str, list[str]]:
+         return parse_qs(urlsplit(self.path).query)

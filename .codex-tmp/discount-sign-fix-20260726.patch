@@ -1,0 +1,47 @@
+--- a/psi_engine/engine.py
++++ b/psi_engine/engine.py
+@@ -151,7 +151,7 @@
+     copy_source("Pre-order source", "preorder"); copy_source("Pre-orders final", "preorder"); copy_source("Revenue raw", "revenue", None, 4)
+     if "revenue" in by:
+         source = load_workbook(io.BytesIO(by["revenue"]), read_only=True, data_only=True).active; output = workbook.create_sheet("Revenue final"); output.append(list(next(source.iter_rows(min_row=4, max_row=4, values_only=True))) + ["Net Revenue"])
+-        for row_no, row in enumerate(revenue, 2): output.append(list(row) + [f"=R{row_no}-MAX(0,U{row_no})-X{row_no}-Y{row_no}"])
++        for row_no, row in enumerate(revenue, 2): output.append(list(row) + [f"=R{row_no}-U{row_no}-X{row_no}-Y{row_no}"])
+     copy_source("CRM orders", "crm", "Danh sách"); copy_source("CRM items", "crm", "Bảng hàng hóa"); copy_source("Target detail", "target"); copy_source("Target final", "target")
+     for sheet in workbook.worksheets:
+         for cell in sheet[1]: cell.font = Font(color="FFFFFF", bold=True); cell.fill = PatternFill("solid", fgColor="1F4E78")
+--- a/tests/test_workbook_export.py
++++ b/tests/test_workbook_export.py
+@@ -49,4 +49,32 @@
+     # Then: the artifact opens and exposes every current PSI sheet.
+     assert EXPECTED_SHEETS <= set(workbook.sheetnames)
+     assert workbook["PSI Summary"]["A1"].value == "Metric"
+-    assert workbook["Revenue final"]["AA2"].value == "=R2-MAX(0,U2)-X2-Y2"
++    assert workbook["Revenue final"]["AA2"].value == "=R2-U2-X2-Y2"
++
++
++def test_net_revenue_formula_keeps_accounting_sign_of_discount_when_revenue_sheet_is_built(
++    tmp_path: Path,
++) -> None:
++    # Given: the complete stable PSI fixture set.
++    files = {
++        path.name: path.read_bytes()
++        for path in sorted(FIXTURES.glob("*.xlsx"))
++        if path.name != "malformed_product.xlsx"
++    }
++    # When: the reconciliation build creates an XLSX artifact.
++    result = server.build(files)
++    workbook_path = tmp_path / "psi_sign.xlsx"
++    workbook_path.write_bytes(result["xlsx"])
++    sheet = load_workbook(workbook_path, data_only=False)["Revenue final"]
++    formulas = [
++        sheet.cell(row_no, 27).value
++        for row_no in range(2, sheet.max_row + 1)
++        if sheet.cell(row_no, 27).value
++    ]
++    # Then: no formula clamps the discount, so credit notes keep their negative sign.
++    assert formulas
++    assert all("MAX(" not in str(formula) for formula in formulas)
++    assert all(
++        str(formula) == f"=R{row_no}-U{row_no}-X{row_no}-Y{row_no}"
++        for row_no, formula in enumerate(formulas, 2)
++    )

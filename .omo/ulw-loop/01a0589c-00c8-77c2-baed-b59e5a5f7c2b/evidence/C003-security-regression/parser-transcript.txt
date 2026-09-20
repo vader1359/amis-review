@@ -1,0 +1,14 @@
+2026-08-31T16:41-16:42Z
+
+1. jq validated .neon exact shape and expected values: exit 0, output true.
+2. jq validated skills-lock.json version 1 with exactly neon and neon-postgres: exit 0, output true.
+3. jq validated C001 and C002 JSON evidence files: exit 0.
+4. credential-pattern rg scan across task-created repository config/skills: exit 1 with empty output, meaning no matches.
+5. git check-ignore -v .neon: .gitignore:8:.neon.
+6. git ls-files for .neon and installed skill/config paths: empty, meaning none are tracked.
+7. codex mcp get Neon: enabled true; streamable_http; URL https://mcp.neon.tech/mcp?readonly=true&projectId=withered-fog-14675525; no bearer env var; no HTTP headers.
+8. fresh ephemeral Codex read-only run: Neon.describe_project arguments {}; MCP status completed; returned withered-fog-14675525, amis-review-psi, aws-ap-southeast-1, PostgreSQL 18.
+9. API-key cleanup: id 3299882 revoked true for project withered-fog-14675525.
+10. BrowserOS screenshot render: PNG 1275x1650, SHA-256 099faa05b355f37d50d31d2af0ae8b078ee082dc534db1bb616fdfad5c93f7cf; manual visual inspection passed.
+
+Note: Biome LSP is not installed, so evidence JSON was validated with jq. This does not affect runtime integration or JSON syntax validation.

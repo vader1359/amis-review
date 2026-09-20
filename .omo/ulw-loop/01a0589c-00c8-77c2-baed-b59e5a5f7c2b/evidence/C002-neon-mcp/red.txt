@@ -1,0 +1,10 @@
+criterion: C002
+captured_at: 2026-08-31T16:22:45Z
+tree: 15263c5
+
+command: codex mcp list
+exit: 0
+configured MCP servers: browseros-neo, chrome-devtools, codegraph, computer-use, context7, cua_repl, git_bash, grep_app, headroom, lsp, node_repl, pointa, tokensave
+Neon server present: no
+
+Binary result: FAIL as expected because Codex has no enabled Neon MCP server to call.

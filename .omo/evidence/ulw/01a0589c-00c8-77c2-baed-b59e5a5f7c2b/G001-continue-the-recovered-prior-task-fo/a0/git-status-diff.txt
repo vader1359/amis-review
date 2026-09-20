@@ -1,0 +1,10 @@
+Baseline tracked modified paths:
+.gitignore
+README.md
+bao_cao_doi_soat_CRM_MISA_2026-07-05.xlsx
+input/CRM_Sale.xlsx
+scripts/build_audit_report.py
+
+Final tracked modified paths: identical.
+Task-specific additions are ignored/untracked integration and evidence only.
+Verdict: PASS, existing dirty work preserved.

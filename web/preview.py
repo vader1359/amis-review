@@ -101,9 +101,9 @@ def create_app(
     store = SourceStore(
         storage_dir if storage_dir is not None else default_storage_dir()
     )
-    from web.review_api import attach_review_routes
     from web.review_sources import SourceBundleStore, merge_applied_exclusions
     from web.review_store import ReviewStore
+    from web.review_api import attach_review_routes
 
     bundles = SourceBundleStore(Path(os.environ.get("PSI_REPORT_SOURCE_DIR", str((storage_dir or default_storage_dir()).parent / "report-sources"))))
     gate = asyncio.Semaphore(1)

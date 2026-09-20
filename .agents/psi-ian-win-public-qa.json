@@ -1,0 +1,46 @@
+{
+  "unauth /": 401,
+  "unauth /api/config": 401,
+  "unauth /api/reports": 401,
+  "unauth /app.js": 401,
+  "unauth /api/drafts/7676496e89804e12b4e7896aec8192c1/download": 401,
+  "auth /": 200,
+  "auth /api/config": 200,
+  "saved_sources": 4,
+  "storage": {
+    "enabled": true,
+    "provider": "neon"
+  },
+  "auth /api/reports": 200,
+  "auth /api/reports/7676496e89804e12b4e7896aec8192c1/sheets": 200,
+  "sheets": 17,
+  "auth /api/drafts/7676496e89804e12b4e7896aec8192c1/download": 200,
+  "download_sha256": "c8bb2fac04f254aaf32aef04249df314297e68e182363bf5602a73bc2c98ac44",
+  "download_bytes": 2396862,
+  "cross_origin": 403,
+  "incremental_upload_batches": [
+    {
+      "count": 1,
+      "status": 200,
+      "classified": 1
+    },
+    {
+      "count": 2,
+      "status": 200,
+      "classified": 2
+    },
+    {
+      "count": 1,
+      "status": 200,
+      "classified": 1
+    }
+  ],
+  "browser": {
+    "ant_elements": 201,
+    "horizontal_overflow": false,
+    "history_visible": true,
+    "remote_storage_footer": true
+  },
+  "independent_review": "CLEAR",
+  "focused_tests": 47
+}

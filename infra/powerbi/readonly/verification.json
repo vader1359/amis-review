@@ -1,0 +1,21 @@
+{
+  "scenario": "offline contract validation of six pinned read-only PSI Power Query files",
+  "invocation": ".venv/bin/python -m pytest infra/powerbi/readonly/test_payload_contract.py -q",
+  "status": "PASS",
+  "observed_at": "2026-09-09T12:45:00+07:00",
+  "binary_observables": {
+    "tests_passed": 5,
+    "fixture_rows": {
+      "inventory_rows": 3168,
+      "purchase_rows": 2605,
+      "crm_product_rows": 8426,
+      "revenue_rows": 8786,
+      "preorder_rows": 402
+    },
+    "read_query": "SELECT payload::text AS payload_json FROM psi_preview.reports WHERE id = @report_id"
+  },
+  "limits": [
+    "No Neon connection, database read or Power BI refresh was performed.",
+    "The verification confirms local query contracts and the corrected payload fixture only."
+  ]
+}

@@ -1,0 +1,350 @@
+{
+  "save_seconds": 48.16,
+  "report": {
+    "id": "7676496e89804e12b4e7896aec8192c1",
+    "as_of": "2026-09-03",
+    "created_at": "2026-09-05T19:28:34.125848+00:00",
+    "state": "draft",
+    "input_hash": "97b19ebf05e4b0ffd2ce1593779d290ad066af09f51da56ce911515434039a18",
+    "workbook_sha256": "c8bb2fac04f254aaf32aef04249df314297e68e182363bf5602a73bc2c98ac44",
+    "summary": {
+      "cogs": 38732452241.0,
+      "net_revenue": 94513460264.0,
+      "revenue_rows": 8786,
+      "data_gap_rows": 5,
+      "inventory_qty": 55282.5,
+      "mismatch_rows": 1054,
+      "preorder_rows": 402,
+      "purchase_rows": 2605,
+      "inventory_rows": 3168,
+      "inventory_value": 41213045598.0,
+      "crm_final_orders": 2705,
+      "po_excluded_rows": 9,
+      "psi_product_rows": 4277,
+      "revenue_quantity": 54711.6,
+      "new_mismatch_rows": 4,
+      "crm_final_products": 8426,
+      "order_excluded_orders": 4,
+      "preorder_excluded_rows": 324
+    },
+    "gates": [
+      {
+        "check": "source_files_readable",
+        "notes": "All seven source/control files exist and are non-empty.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "manual_check_validator_pass",
+        "notes": "Registry loaded; 397 active preorder rows.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "prior_psi_baseline_found",
+        "notes": "PSI_Final_27.08.2026.xlsx",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "revenue_quantity_header_exact",
+        "notes": "Selected exact header Tổng số lượng bán.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "revenue_quantity_total_matches_rows",
+        "notes": "Quantity=54711.6.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "inventory_raw_positive_only",
+        "notes": "Retained 3168 positive warehouse-level rows; PSI by Product aggregates 2410 canonical SKUs.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "preorder_exclusion_no_leak",
+        "notes": "No active permanent key appears in open Pre-orders.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "preorder_excluded_rows_authorized",
+        "notes": "Every excluded output row matches an active permanent key.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "preorder_excluded_output_unique",
+        "notes": "Excluded output is unique by Order ID + canonical SKU.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "preorder_registry_set_semantics",
+        "notes": "Set semantics applied to 397 rows / 393 unique keys; duplicates are recorded as Data gaps.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "order_exclusion_no_leak",
+        "notes": "No approved whole-order exclusion appears in business outputs.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "mismatch_identity_unique",
+        "notes": "Mismatch output is unique by Source + trimmed Key + Issue.",
+        "actual": true,
+        "status": "PASS",
+        "expected": true
+      },
+      {
+        "check": "manual_check_duplicate_preorder_identities",
+        "notes": "Registry duplicates are surfaced in Data gaps; deterministic set semantics prevent duplicate exclusions.",
+        "actual": 2,
+        "status": "WARN",
+        "expected": 0
+      }
+    ],
+    "sheet_count": 17,
+    "storage": "neon",
+    "validation": {
+      "payload": "PASS",
+      "parquet": "PASS",
+      "workbook": "PASS"
+    },
+    "download_url": "/api/drafts/7676496e89804e12b4e7896aec8192c1/download",
+    "saved_sources": {
+      "purchase": {
+        "id": "92429acc0fe8436d32e361d21c5bb7de",
+        "filename": "0_LOADING LIST DETAIL_New.xlsx",
+        "sha256": "768081ce81192e00d80c47081ea1e697aba5dcb6cb4c45587ab1172ed0d63137",
+        "size": 2353994,
+        "stored_at": "2026-09-05T17:47:37.250301+00:00"
+      },
+      "target": {
+        "id": "299fdfdc826cb4bbab70de25ee977aef",
+        "filename": "Target.xlsx",
+        "sha256": "d55f701d64adba55ed9f057b110574b184d2d1a2e1353042c1313c99e8c60e3e",
+        "size": 5026,
+        "stored_at": "2026-09-05T17:47:37.260261+00:00"
+      },
+      "manual_check": {
+        "id": "a4c876836f1a84e779bc59758ff4811d",
+        "filename": "PSI_Manual_Check.xlsx",
+        "sha256": "fe78ab207f85b6af8e6af94c484e01048bf7eb08d9bca81861d668de788c6d2f",
+        "size": 116550,
+        "stored_at": "2026-09-05T17:47:37.397564+00:00"
+      },
+      "prior_psi": {
+        "id": "14ef4285a710525b366afc2f1ca7c212",
+        "filename": "PSI_Final_27.08.2026.xlsx",
+        "sha256": "63b1a8847c28ae6f281dfb8addc03a4d6779a36f6c61af7f6649c49c20a9fc1d",
+        "size": 3177487,
+        "stored_at": "2026-09-05T17:47:38.850804+00:00"
+      }
+    }
+  },
+  "sheets": [
+    {
+      "ordinal": 1,
+      "name": "PSI Summary",
+      "row_count": 10,
+      "column_count": 4,
+      "populated_rows": 10,
+      "cell_count": 34,
+      "sha256": "f3eba8ac44fd50f3217ab2865a30dfe673f9aa0347587bc814cfea8d4d8f1ad9"
+    },
+    {
+      "ordinal": 2,
+      "name": "Checks",
+      "row_count": 16,
+      "column_count": 5,
+      "populated_rows": 16,
+      "cell_count": 72,
+      "sha256": "011ccd8f4b852169d676f81fc383df23f4b3a4840ba7d87ffec94ab22185c79c"
+    },
+    {
+      "ordinal": 3,
+      "name": "Sources",
+      "row_count": 11,
+      "column_count": 4,
+      "populated_rows": 11,
+      "cell_count": 38,
+      "sha256": "506f421ee23855bc4925da3efd10e48f10aa036bcb0b7abbae4063a27b37eb12"
+    },
+    {
+      "ordinal": 4,
+      "name": "Mismatch",
+      "row_count": 1057,
+      "column_count": 7,
+      "populated_rows": 1057,
+      "cell_count": 6337,
+      "sha256": "6fcffcce1b295702acf3e2ff85024fffb5bfc16669881bd7a2fde94e5529cbd9"
+    },
+    {
+      "ordinal": 5,
+      "name": "Data gaps",
+      "row_count": 8,
+      "column_count": 4,
+      "populated_rows": 8,
+      "cell_count": 26,
+      "sha256": "3c77ccb78dcb3128c90f70905f1a2517bff92b15eaf4afbc211df9028d17e6fe"
+    },
+    {
+      "ordinal": 6,
+      "name": "PO excluded",
+      "row_count": 12,
+      "column_count": 4,
+      "populated_rows": 12,
+      "cell_count": 33,
+      "sha256": "f81f804dbd9d0b5898a3353d9d2b657f57b6270d63da851bd00598fdd68822bd"
+    },
+    {
+      "ordinal": 7,
+      "name": "PSI by Product",
+      "row_count": 4280,
+      "column_count": 15,
+      "populated_rows": 4280,
+      "cell_count": 64028,
+      "sha256": "cb285dee69fb24bbb702b461b64c58069f82c2e58baa938ef821bea479877bd3"
+    },
+    {
+      "ordinal": 8,
+      "name": "Brand",
+      "row_count": 20869,
+      "column_count": 2,
+      "populated_rows": 20869,
+      "cell_count": 41682,
+      "sha256": "a8f4a1b32cab9a4422587d36eedffd802978814ea8c48c995fe1158a6cefc5aa"
+    },
+    {
+      "ordinal": 9,
+      "name": "Category",
+      "row_count": 74,
+      "column_count": 2,
+      "populated_rows": 74,
+      "cell_count": 143,
+      "sha256": "d6570db6cc2a1b70d23766f3350d3c8753341ad99ac98072256b8c6f3a03758a"
+    },
+    {
+      "ordinal": 10,
+      "name": "Purchase",
+      "row_count": 2608,
+      "column_count": 15,
+      "populated_rows": 2608,
+      "cell_count": 36656,
+      "sha256": "6cd848c9962890420b441c8549f113be3e2cec9531a6293f6cd646475fd171cb"
+    },
+    {
+      "ordinal": 11,
+      "name": "Inventory",
+      "row_count": 3171,
+      "column_count": 11,
+      "populated_rows": 3171,
+      "cell_count": 33987,
+      "sha256": "0f9d82f3e132def6a3ba28452511df82cc0184427c0fe384db95a1e78e3409c9"
+    },
+    {
+      "ordinal": 12,
+      "name": "Pre-orders",
+      "row_count": 405,
+      "column_count": 18,
+      "populated_rows": 405,
+      "cell_count": 4625,
+      "sha256": "903af0de31840543d5fd217db3e27c80d41a2af478557d59a299e69f82a01d33"
+    },
+    {
+      "ordinal": 13,
+      "name": "Preorder excluded KT",
+      "row_count": 327,
+      "column_count": 18,
+      "populated_rows": 327,
+      "cell_count": 4317,
+      "sha256": "a9544490a228d449ccb0b8bd014b5ac44df428d612f1c2920e77775b0e627c68"
+    },
+    {
+      "ordinal": 14,
+      "name": "Revenue",
+      "row_count": 8789,
+      "column_count": 18,
+      "populated_rows": 8789,
+      "cell_count": 111680,
+      "sha256": "8dad4e735f46ec626a46edcfa1c68b050c20eedb43c572b9fd0d2a221d72e91d"
+    },
+    {
+      "ordinal": 15,
+      "name": "CRM Final",
+      "row_count": 2708,
+      "column_count": 10,
+      "populated_rows": 2708,
+      "cell_count": 26979,
+      "sha256": "1913513c56161a19457fb88659f4fc60b0ef9ac92e7e3cf78dddaf641006af2e"
+    },
+    {
+      "ordinal": 16,
+      "name": "Final CRM Products",
+      "row_count": 8429,
+      "column_count": 6,
+      "populated_rows": 8429,
+      "cell_count": 50564,
+      "sha256": "74b1420d50384c7a6a8a2b44891e60775c7498d9a5c497ccc4aa0b07a646cdb4"
+    },
+    {
+      "ordinal": 17,
+      "name": "Target",
+      "row_count": 22,
+      "column_count": 9,
+      "populated_rows": 22,
+      "cell_count": 104,
+      "sha256": "89c859c740a784c12a20f871497c1cb9772578ec75f7016540387427e6b181df"
+    }
+  ],
+  "restart_download": {
+    "PASS": true,
+    "bytes": 2396862,
+    "seconds": 14.66,
+    "sha256": "c8bb2fac04f254aaf32aef04249df314297e68e182363bf5602a73bc2c98ac44"
+  },
+  "database_counts": {
+    "populated_rows": 52796,
+    "cells": 381305,
+    "formulas": 8565
+  },
+  "database_report_count": 1,
+  "idempotence": {
+    "PASS": true,
+    "same_report_id": true,
+    "report_count": 1,
+    "seconds": 15.87
+  },
+  "verification": {
+    "regression": {
+      "passed": 169,
+      "skipped": 2,
+      "skip_reasons": [
+        "Terraform native gate binary not on PATH, IaC unchanged",
+        "optional golden fixture not configured; actual runtime workbook exact accepted hash verified"
+      ]
+    },
+    "ui_tests": 8,
+    "ui_build": "PASS",
+    "code_review": "CLEAR",
+    "credential_file_private": true,
+    "temporary_admin_credential_removed": true
+  }
+}

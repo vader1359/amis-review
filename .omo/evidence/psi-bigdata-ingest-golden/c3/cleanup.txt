@@ -1,0 +1,8 @@
+Invocation: uv run python with shutil.rmtree on four explicit C3 temporary roots,
+then find .tmp -maxdepth 1 -name '*psi-c3*' -print
+Observable: find printed no paths; exit 0.
+Removed: amended manual cache, driver-negative copy, and two final manual caches.
+Recovery: temporary generated caches only; source workbooks were not removed or modified.
+
+Post-cleanup invocation: uv run python -c <load_manifest summary>
+Observable: {'post_cleanup_manifest_valid': True, 'sources': 6, 'relations': 7}; exit 0.

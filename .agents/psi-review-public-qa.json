@@ -1,0 +1,32 @@
+{
+  "summary": {
+    "mismatch_count": 1054,
+    "change_count": 125,
+    "new_preorder_count": 37,
+    "preorder_attention_count": 13
+  },
+  "baseline": {
+    "status": "available",
+    "source": "selected_final_workbook",
+    "as_of": "2026-08-27",
+    "sha256": "63b1a8847c28ae6f281dfb8addc03a4d6779a36f6c61af7f6649c49c20a9fc1d"
+  },
+  "can_rebuild": true,
+  "saved_sources": 4,
+  "ai_status": "ok",
+  "ai_model": "lazy-luna",
+  "ai_seconds": 9.65,
+  "live_review_events": 0,
+  "unauth_review_status": 401,
+  "browser": {
+    "four_tabs": true,
+    "note_modal": true,
+    "submission_not_performed_on_live": true
+  },
+  "qa_flows": [
+    "preorder",
+    "whole_order",
+    "billed_order_exact_financial_delta"
+  ],
+  "real_database_rollback": "PASS"
+}

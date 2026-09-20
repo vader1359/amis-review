@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "evidenceLayoutVersion": 2,
+  "createdAt": "2026-08-31T16:22:05.262Z",
+  "updatedAt": "2026-08-31T17:01:17.282Z",
+  "briefPath": ".omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/brief.md",
+  "goalsPath": ".omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/goals.json",
+  "ledgerPath": ".omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/ledger.jsonl",
+  "codexGoalMode": "aggregate",
+  "goals": [
+    {
+      "id": "G001-continue-the-recovered-prior-task-fo",
+      "title": "Continue the recovered prior task for /Users/iant1359/Develop/amis-re...",
+      "objective": "Continue the recovered prior task for /Users/iant1359/Develop/amis-review: finish Neon setup for the PSI shared tool. Preserve the existing dirty worktree and never expose credentials. Deliver a correctly selected or newly created PSI Neon project in organization org-calm-tree-69287331, link this repository to that project using the Neon CLI, ensure Neon project-scoped plugin skills and MCP are installed and enabled in Codex, and prove a live read-only Neon MCP call. HEAVY because this changes an authenticated external integration and project configuration. Success criteria: (1) BrowserOS Neo opens a task-owned Neon Console tab at https://console.neon.tech/app/org-calm-tree-69287331/projects and visibly shows the signed-in organization and the same selected PSI project; capture action log and screenshot. RED is the current state where the project is not yet selected or linked. (2) The Neon CLI non-interactively lists organization projects, the correct PSI project is selected without duplicating or mutating an unrelated project, and repository link readback matches its project id; capture sanitized CLI JSON. RED is current interactive project-list prompt and absent repository link. (3) Codex lists Neon MCP as enabled and a live read-only Neon MCP tool returns the selected project metadata; capture codex mcp list plus tool output. RED is the current state where codex mcp list has no Neon server. (4) Existing dirty work is preserved and no credential is added to git-tracked or newly created repository config; capture before/after git status and a secret-safe configuration audit. Stop right away when BrowserOS, CLI link readback, and Neon MCP all agree on one PSI project, the live MCP call succeeds, security regression proof passes, all QA resources are cleaned up, and final reviewers approve.",
+      "status": "complete",
+      "successCriteria": [
+        {
+          "id": "C001",
+          "scenario": "BrowserOS Neo: name session Neon PSI Setup, open a task-owned tab at https://console.neon.tech/app/org-calm-tree-69287331/projects, snapshot/read the signed-in organization, select the PSI project; then run neon projects list with explicit org id and neon link/readback non-interactively. PASS only if BrowserOS and sanitized CLI readback show the same single project id/name and the repository link exists.",
+          "userModel": "happy",
+          "expectedEvidence": ".omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/evidence/C001-neon-link/browser.png plus .omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/evidence/C001-neon-link/action-log.txt and .omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/evidence/C001-neon-link/cli-readback.json; cleanup receipt closes the task-owned BrowserOS tab and any CLI process.",
+          "essential": true,
+          "capturedEvidence": ".omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/evidence/C001-neon-link/{browser.png,action-log.txt,cli-readback.json}: BrowserOS and CLI agree on amis-review-psi / withered-fog-14675525 / production @tree:15263c5 | cleanup: closed BrowserOS pages 11 and 12; no Neon CLI process remains",
+          "status": "pass",
+          "capturedAt": "2026-08-31T16:43:05.733Z"
+        },
+        {
+          "id": "C002",
+          "scenario": "Run codex mcp list and invoke one live read-only Neon MCP project metadata/list tool for the linked project. PASS only if Neon MCP is enabled, the call returns the same project id as C001, no stale-inventory or authentication error occurs, and no duplicate PSI project was created in org-calm-tree-69287331.",
+          "userModel": "edge",
+          "expectedEvidence": ".omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/evidence/C002-neon-mcp/codex-mcp-list.txt plus .omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/evidence/C002-neon-mcp/live-tool.json and .omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/evidence/C002-neon-mcp/org-projects-sanitized.json; cleanup receipt confirms no login listener or browser context remains.",
+          "essential": true,
+          "capturedEvidence": ".omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/evidence/C002-neon-mcp/{codex-mcp-list.txt,live-tool.json,org-projects-sanitized.json,auth-cleanup.json}: OAuth read-only Neon.describe_project returned amis-review-psi / withered-fog-14675525 and org PSI count is 1 @tree:15263c5 | cleanup: temporary API key 3299882 revoked; OAuth login listener exited; task-owned callback tab closed",
+          "status": "pass",
+          "capturedAt": "2026-08-31T16:43:05.825Z"
+        },
+        {
+          "id": "C003",
+          "scenario": "Compare the pre-change git status snapshot with final git status, inspect only newly changed integration/config files, and scan their tracked content for credential-like values while verifying repository tests/config parsing relevant to those files. PASS only if all pre-existing dirty files remain preserved, no unrelated tracked file changes, no credential value is stored, and the selected project link/MCP config still parses.",
+          "userModel": "regression",
+          "expectedEvidence": ".omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/evidence/C003-security-regression/git-status-before.txt plus .omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/evidence/C003-security-regression/git-status-after.txt, .omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/evidence/C003-security-regression/config-audit.txt, and test or parser transcript; cleanup receipt removes temporary audit files outside the evidence directory.",
+          "essential": false,
+          "capturedEvidence": ".omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/evidence/C003-security-regression/{git-status-before.txt,git-status-after.txt,config-audit.txt,parser-transcript.txt}: tracked dirty set preserved, repo config secret scan empty, parsers pass, OAuth has no HTTP auth header @tree:15263c5 | cleanup: browser PDF moved to Trash; no temp audit process or file remains",
+          "status": "pass",
+          "capturedAt": "2026-08-31T16:43:05.918Z"
+        }
+      ],
+      "attempt": 0,
+      "createdAt": "2026-08-31T16:22:05.262Z",
+      "updatedAt": "2026-08-31T17:01:17.282Z",
+      "completedAt": "2026-08-31T17:01:17.282Z",
+      "evidence": "Task complete: BrowserOS, CLI link, and OAuth read-only Neon MCP agree on amis-review-psi / withered-fog-14675525; live Neon.describe_project passed; C001-C003 validation passed; code-review APPROVE/CLEAR, manual QA PASS, and gate-review APPROVE at SHA 3e686be94834e343e3018bce1ddc69d20fa5957d tree 15263c5db8f75f260b1d267f2d753a0512f3c6e0; cleanup complete and dirty work preserved."
+    }
+  ],
+  "codexObjective": "Complete the durable ulw-loop plan in .omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/goals.json, including later accepted/appended stories, under the original brief constraints; use .omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/ledger.jsonl as the audit trail.",
+  "aggregateCompletion": {
+    "status": "complete",
+    "completedAt": "2026-08-31T17:01:17.282Z",
+    "evidence": "Task complete: BrowserOS, CLI link, and OAuth read-only Neon MCP agree on amis-review-psi / withered-fog-14675525; live Neon.describe_project passed; C001-C003 validation passed; code-review APPROVE/CLEAR, manual QA PASS, and gate-review APPROVE at SHA 3e686be94834e343e3018bce1ddc69d20fa5957d tree 15263c5db8f75f260b1d267f2d753a0512f3c6e0; cleanup complete and dirty work preserved.",
+    "codexGoal": {
+      "goal": {
+        "threadId": "01a0589c-00c8-77c2-baed-b59e5a5f7c2b",
+        "objective": "Complete the durable ulw-loop plan in .omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/goals.json, including later accepted/appended stories, under the original brief constraints; use .omo/ulw-loop/01a0589c-00c8-77c2-baed-b59e5a5f7c2b/ledger.jsonl as the audit trail.",
+        "status": "complete",
+        "tokensUsed": 7200,
+        "timeUsedSeconds": 34,
+        "createdAt": 1788195630,
+        "updatedAt": 1788195665
+      },
+      "remainingTokens": null
+    }
+  }
+}

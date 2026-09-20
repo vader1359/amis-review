@@ -1,0 +1,18 @@
+Invocation: uv run ruff check src tests
+Observable: All checks passed; exit 0.
+
+Invocation: uv run ruff format --check src tests
+Observable: 14 files already formatted; exit 0.
+
+Invocation: uv run ruff check --select ALL on all seven C3 Python files
+Observable: All checks passed; exit 0.
+
+Invocation: uv run basedpyright
+Observable: 0 errors, 0 warnings, 0 notes; exit 0.
+
+Invocation: check-no-excuse-rules.py on each owned Python file
+Observable: no violations in all seven files.
+
+Pure LOC: ingest.py 75; cache.py 202; _cache_hash.py 88;
+_cache_models.py 71; test_ingest.py 102; test_cache_failures.py 180;
+manual_pyarrow_check.py 146. Every file is <=250.

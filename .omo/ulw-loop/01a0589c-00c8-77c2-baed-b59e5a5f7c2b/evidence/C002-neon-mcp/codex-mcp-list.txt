@@ -1,0 +1,10 @@
+Captured 2026-08-31T16:40:55Z
+
+Neon
+  enabled: true
+  transport: streamable_http
+  url: https://mcp.neon.tech/mcp?readonly=true&projectId=withered-fog-14675525
+  auth: OAuth
+  authorization_header: absent
+
+Plugin: neon-postgres@plugins-cli 1.1.2 installed and enabled.

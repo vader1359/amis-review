@@ -1,0 +1,71 @@
+{
+  "commit": "e9afe8ba05db7367177a28aa98e33a058f664f18",
+  "completed_at": "2026-09-05T18:00:50.338309+00:00",
+  "scope": "Current local PSI preview UI and reusable source workflow; cloud remains separate",
+  "source_hashes": {
+    "docs/PSI_ONLINE_ACCEPTANCE.md": "91e754b207121f5e549ce75284bd45c46080fe211ad75ec50d7685902339f5a0",
+    "tests/psi_tool/test_online_preview.py": "dab5ea52b68174e4ed94410914dc0aaf540650b6ff74449618a0aba0501af632",
+    "tests/psi_tool/test_preview_classify.py": "c94c2467dd5014de641dc0159924678bb1ae94d35eba9d5884148f1531fd543d",
+    "tests/psi_tool/test_preview_store.py": "a6753b598a958423d0ad134de11dbd4c5e8e1031e95a8897d07681e889fd6210",
+    "web/__init__.py": "480747fa1c5ee9e4fbf96213768f722bed0762cf04e33d45eb86b853d1c66ea8",
+    "web/preview.py": "b63b1ebe565d4923c78e06b453f8a24fb378ecb9f36a2a0e792b519ca416a090",
+    "web/preview_classify.py": "c0971b074a340edb619725c45223ec5b34348c6cf626c0c5beb5292ce9ffca43",
+    "web/preview_static/app.js": "5a871d0458ff33bcfe617252f299e349d6a7b516d8a976478fb2444931af6cd1",
+    "web/preview_static/index.html": "0defcb280cf9d5b55ac72dd12682a2660f2b27d6a7addc0bbdbc34b2c6c1f903",
+    "web/preview_static/styles.css": "572c2a3446f520a71922f93a7bf79b28ab7c024307a268ef67e186cfb6602046",
+    "web/preview_store.py": "61e83ef77d1d6338dfa73673c7fee104a1e7a7323e78a694f0481757dafb688b",
+    "web/ui/.gitignore": "4d56952b0fb13bf8f9b6c13a6d4c34a075bac3af447636a1df4335d7576e2f97",
+    "web/ui/README.md": "d9df6ca60027bf335a9bd90f23206a72605742cd8bbd7bc1711cf52a1b015543",
+    "web/ui/index.html": "d0a784c5ea3e2d60c73f26c43d0407c2b0e53a960e87858a9722c5a1801e36bd",
+    "web/ui/package-lock.json": "050966090bfc5e175764c11027af61a33307b60849c75ec2394b3430b2f374ba",
+    "web/ui/package.json": "ceb1086a3b806d69ce9ba652ce80cd2dc6ec54e94a9cca08bfc5049c67db4122",
+    "web/ui/src/main.jsx": "2a0a683df11ab8676cca7279fbf3309912de88aba0e701d4c5f2c27f5eaeb122",
+    "web/ui/src/model.js": "df4d5a35ce09e1b39464a6432d30e9979bf6548699bc6b600474be486b1a9973",
+    "web/ui/src/model.test.js": "49937d8ad4888345a5d3c5048c0365eaa236b5f591830639e39ddf73459f56a3",
+    "web/ui/src/request.js": "1eab428abb9dad0cd9c2efeacc17fb587834c08694f09a5327960cd95a5d12b2",
+    "web/ui/src/request.test.js": "ebd00aa1f0a9e01e24dca91a2c33d52c319ad651737d068819b47be94fe35ae3",
+    "web/ui/src/styles.css": "ae6693b000b0b46e948feb0369ce3ae95faa85ad8ef13476f793d4f644ed17e1",
+    "web/ui/vite.config.js": "4eebb31d91a65ce4e17997400e9db0fe3e9e26a6d08ef7675f452fd841e9f327"
+  },
+  "independent_review": "CLEAR / APPROVE by ui_reuse_review; implicit saved-source replacement fixed and re-reviewed",
+  "post_commit": {
+    "backend_tests": "31 passed in 1.10s",
+    "ui_tests": "6 passed",
+    "focused_ruff": "PASS",
+    "tracked_tree_clean": true
+  },
+  "development_full_suite": {
+    "result": "150 passed, 2 skipped in 135.39s",
+    "scope": "Started before final review fix; final fix and three added regressions verified in post-commit targeted gate",
+    "skips": [
+      "Unchanged Terraform gate (binary not in PATH)",
+      "Opt-in private workbook golden test; real browser output byte parity separately verified"
+    ]
+  },
+  "browser": {
+    "mode": "BrowserOS neo task page92",
+    "all_four_renamed_exports_classified": true,
+    "duplicate_batch_blocks_build": true,
+    "desktop_visual": "PASS",
+    "mobile390_no_page_overflow": true,
+    "dynamic_styles_nonce_present": true,
+    "interaction_csp_violations": 0,
+    "actual_browser_download_sha256": "c8bb2fac04f254aaf32aef04249df314297e68e182363bf5602a73bc2c98ac44",
+    "actual_browser_download_verified": true,
+    "draft_generation_seconds": 36.383,
+    "saved_reference_ids_and_hashes_unchanged_after_build": true,
+    "server_restart_preserved_four_saved_files": true
+  },
+  "server": {
+    "url": "http://127.0.0.1:18787/",
+    "pid": 15815,
+    "session": 46289
+  },
+  "source_originals_preserved": true,
+  "cloud_mutation": false,
+  "limitations": [
+    "Saved selections currently persist on this machine only",
+    "Draft bytes held in memory until another Draft or server restart",
+    "Local bundle ~1.15MB uncompressed; Vite size warning, no correctness failure"
+  ]
+}

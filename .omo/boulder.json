@@ -1,0 +1,16 @@
+{
+  "schema_version": 2,
+  "active_work_id": "psi-bigdata-ingest-golden-20260830",
+  "works": {
+    "psi-bigdata-ingest-golden-20260830": {
+      "work_id": "psi-bigdata-ingest-golden-20260830",
+      "active_plan": ".omo/plans/psi-bigdata-ingest-golden.md",
+      "plan_name": "psi-bigdata-ingest-golden",
+      "session_ids": [
+        "codex:01a04de8-3702-72e2-93b3-7da56b5c90fa"
+      ],
+      "status": "complete",
+      "worktree_path": null
+    }
+  }
+}

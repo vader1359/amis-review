@@ -1,0 +1,4 @@
++zsh:1> rtk proxy uv run ruff check src test tests
+All checks passed!
++zsh:1> rtk proxy uv run ruff format --check src test tests
+8 files already formatted

@@ -1,0 +1,10 @@
+criterion: C001
+captured_at: 2026-08-31T16:22:45Z
+tree: 15263c5
+
+RED scenario:
+- `neon projects list --output json` did not produce deterministic JSON; it stopped at the organization selector.
+- `test ! -e .neon` exited 0.
+- `test ! -e .neon/context.json` exited 0.
+
+Binary result: FAIL as expected because this repository has no Neon link context and the initial project query was interactive.

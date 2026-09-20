@@ -1,0 +1,112 @@
+diff --git a/psi_engine/persistence.py b/psi_engine/persistence.py
+--- a/psi_engine/persistence.py
++++ b/psi_engine/persistence.py
+@@ -214,10 +214,31 @@ class SupabaseRepository:
+         return payload["signedURL"]
+ 
+     def transition_mismatch(self, mismatch_id: str, to_status: str, comment: str, evidence: dict[str, str], actor_id: str, auth_token: str = "") -> None:
+         bearer = self._user_bearer(auth_token)
+-        request = Request(f"{self.url}/rest/v1/rpc/transition_mismatch", data=json.dumps({"p_mismatch_id": mismatch_id, "p_to_status": to_status, "p_comment": comment, "p_evidence": evidence}).encode(), method="POST", headers={"apikey": self.key, "Authorization": f"Bearer {bearer}", "Content-Type": "application/json"})
+-        with urlopen(request, timeout=10):
+-            pass
++        if to_status not in {"resolved", "known", "ignored"}:
++            raise UploadValidationError("final mismatch status is required")
++        if self.authenticated_actor(bearer) != actor_id:
++            raise UploadAuthorizationError("authenticated actor is unavailable")
++        rows = self.lookup("mismatches", {"id": mismatch_id}, auth_token)
++        if not rows:
++            raise UploadValidationError("mismatch is unavailable")
++        mismatch = rows[0]
++        fingerprint = str(mismatch.get("fingerprint", ""))
++        if not fingerprint:
++            raise UploadValidationError("mismatch fingerprint is unavailable")
++        reason = json.dumps({"action": to_status, "comment": comment, "evidence": evidence}, ensure_ascii=False, separators=(",", ":"))
++        self.upsert(
++            "known_issues",
++            {
++                "fingerprint": fingerprint,
++                "title": str(mismatch.get("record_key") or fingerprint),
++                "reason": reason,
++                "status": "approved" if to_status == "resolved" else "known",
++                "created_by": actor_id,
++            },
++            "fingerprint",
++            auth_token,
++        )
+ 
+ 
+ @dataclass(frozen=True, slots=True)
+@@ -292,7 +317,12 @@ class PsiMemoryStore:
+     def _write(self, snapshot: Snapshot, run: RunProvenance, draft_id: str, request: UploadRequest, issues: list[list[str | int | float | None]], auth_token: str) -> None:
+         period_id = request.reporting_period_id or request.reporting_period; batch_id = snapshot.object_path.split("/")[1]
+         self.repository.insert("upload_batches", {"id": batch_id, "team_id": request.team_id, "reporting_period_id": period_id, "uploaded_by": request.actor_id}, auth_token); self.repository.insert("source_snapshots", {"id": snapshot.id, "upload_batch_id": batch_id, "team_id": snapshot.team_id, "reporting_period_id": period_id, "source_type": snapshot.source_type, "version": snapshot.version, "original_filename": snapshot.original_filename, "object_path": snapshot.object_path, "checksum_sha256": snapshot.checksum_sha256, "byte_size": snapshot.byte_size, "data_as_of": snapshot.data_as_of, "schema_status": snapshot.schema_status, "row_count": snapshot.row_count, "uploaded_by": snapshot.uploaded_by}, auth_token); self.repository.insert("source_snapshot_metadata", {"source_snapshot_id": snapshot.id, "header_preview": list(snapshot.header_preview), "schema_gaps": [list(gap) for gap in snapshot.schema_gaps]}, auth_token); self.repository.upsert("source_selections", {"reporting_period_id": period_id, "source_type": request.source_type, "source_snapshot_id": snapshot.id, "selected_by": request.actor_id}, "reporting_period_id,source_type", auth_token); self.repository.insert("reconciliation_runs", {"id": run.id, "reporting_period_id": period_id, "started_by": request.actor_id, "rule_version_id": request.rule_version_id, "status": run.status, "started_at": run.started_at, "completed_at": run.started_at}, auth_token); self.repository.insert("reconciliation_run_sources", {"reconciliation_run_id": run.id, "source_snapshot_id": snapshot.id, "source_type": request.source_type}, auth_token); self.repository.insert("normalized_records", {"id": str(uuid4()), "reconciliation_run_id": run.id, "source_snapshot_id": snapshot.id, "source_type": request.source_type, "record_key": run.fingerprint, "normalized_values": {"material": json_material(run.normalized_material)}, "source_row_number": 1}, auth_token); self.repository.upload(snapshot.object_path, request.content, auth_token)
+         existing_fingerprints = {str(row.get("fingerprint")) for row in self.repository.lookup("mismatches", {"reporting_period_id": period_id}, auth_token)}
++        existing_fingerprints.update(
++            str(row.get("fingerprint"))
++            for row in self.repository.lookup("known_issues", {}, auth_token)
++            if str(row.get("status")) in {"known", "approved"}
++        )
+         mismatch_rows: list[dict[str, object]] = []
+         source_types = {"Revenue": "revenue", "Purchase/PO": "purchase"}
+         for issue in issues:
+diff --git a/psi_engine/release.py b/psi_engine/release.py
+--- a/psi_engine/release.py
++++ b/psi_engine/release.py
+@@ -145,6 +145,13 @@ class PsiReleaseService:
+             periods = self.store.repository.lookup("reporting_periods", {"period_key": request.reporting_period}, auth_token)
+             period_id = str(periods[0]["id"]) if periods else period_id
+         mismatches = [] if "-W" in request.reporting_period else self.store.repository.lookup("mismatches", {"reporting_period_id": period_id}, auth_token)
++        if not isinstance(self.store.repository, PsiMemoryRepository):
++            suppressed = {
++                str(row.get("fingerprint"))
++                for row in self.store.repository.lookup("known_issues", {}, auth_token)
++                if str(row.get("status")) in {"known", "approved"}
++            }
++            mismatches = [row for row in mismatches if str(row.get("fingerprint")) not in suppressed]
+         as_of = date.fromisoformat(week_to_period(request.reporting_period)[1]) if "-W" in request.reporting_period else self.config.as_of
+         decision = evaluate_gate(snapshots, mismatches, as_of, self.config.max_source_age_days)
+         return decision
+diff --git a/web/weekly_routes.py b/web/weekly_routes.py
+--- a/web/weekly_routes.py
++++ b/web/weekly_routes.py
+@@ -50,7 +50,16 @@ class WeeklyRoutesMixin:
+                     for source in REQUIRED_SOURCES
+                 }
+                 mismatches = self.store.repository.lookup("mismatches", {"reporting_period_id": period_id}, token)
+-                active_mismatches = [row for row in mismatches if str(row.get("status")) not in {"known", "resolved", "ignored"}]
++                suppressed = {
++                    str(row.get("fingerprint"))
++                    for row in self.store.repository.lookup("known_issues", {}, token)
++                    if str(row.get("status")) in {"known", "approved"}
++                }
++                active_mismatches = [
++                    row for row in mismatches
++                    if str(row.get("status")) not in {"known", "resolved", "ignored"}
++                    and str(row.get("fingerprint")) not in suppressed
++                ]
+                 detailed_mismatches = []
+                 for row in active_mismatches:
+                     details = row.get("values_by_source") if isinstance(row.get("values_by_source"), dict) else {}
+diff --git a/web/server.py b/web/server.py
+--- a/web/server.py
++++ b/web/server.py
+@@ -225,6 +225,6 @@ class H(WeeklyRoutesMixin, ReleaseRoutesMixin, BaseHTTPRequestHandler):
+                 raise UploadValidationError("mismatch is unavailable")
+             current = str(rows[0]["status"])
+-            transitions = {
++            transitions = (to_status,) if isinstance(self.store.repository, SupabaseRepository) else {
+                 "new": ("assigned", "in_progress", to_status),
+                 "reopened": ("assigned", "in_progress", to_status),
+                 "assigned": ("in_progress", to_status),
+diff --git a/web/index.html b/web/index.html
+--- a/web/index.html
++++ b/web/index.html
+@@ -30,7 +30,7 @@
+     </section>
+ 
+     <div id="workspace" class="hidden">
+-      <div class="ant-alert ant-alert-info notice" role="note"><strong>Lưu ý:</strong> Mọi tài khoản cùng xem trạng thái chung. Mismatch mới được đưa vào bảng kiểm tra và không chặn tạo workbook.</div>
++      <div class="ant-alert ant-alert-info notice" role="note"><strong>Lưu ý:</strong> Mọi tài khoản cùng xem trạng thái chung. Mismatch mới phải được xử lý hoặc ghi nhận trước khi xuất PSI Final.</div>
+       <section class="ant-card card">
+         <div class="section-heading"><div><p class="eyebrow">01 / PHẠM VI</p><h2>Kỳ báo cáo dùng chung</h2></div><span id="ready" class="ant-tag ant-tag-gold badge quiet">Chưa đủ file</span></div>
+         <div class="form-grid">

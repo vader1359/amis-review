@@ -1,0 +1,5 @@
+Setup: copied the seven-file cache to .tmp/psi-c3-driver-negative and rewrote
+one Parquet with foreign/missing psi identity metadata.
+Invocation: uv run .omo/evidence/psi-bigdata-ingest-golden/c3/manual_pyarrow_check.py tests/psi_tool/fixtures/golden_manifest.toml .tmp/psi-c3-driver-negative
+Observable: CheckError: unknown relation metadata
+Exit: 1

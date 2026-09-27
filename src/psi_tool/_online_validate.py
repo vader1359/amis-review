@@ -336,7 +336,7 @@ def validate(
         source_paths["Revenue"], "SỔ CHI TIẾT BÁN HÀNG", 4
     )
     rev_idx = headers(rev_header)
-    revenue_expected: list[tuple[str, str, float, float, float, str]] = []
+    revenue_expected: list[tuple[str, str, float, float, float, str, str]] = []
     revenue_by_key: dict[tuple[str, str], list[float]] = defaultdict(lambda: [0.0, 0.0])
     revenue_by_sku: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0, 0.0])
     raw_revenue_missing_sku: list[str] = []
@@ -366,13 +366,23 @@ def validate(
             - number(field(row, rev_idx, "Giá trị giảm giá"))
         )
         cogs = number(field(row, rev_idx, "Giá vốn"))
-        revenue_expected.append((posting.isoformat(), code, qty, net, cogs, order_id))
+        revenue_expected.append(
+            (
+                posting.isoformat(),
+                code,
+                qty,
+                net,
+                cogs,
+                order_id,
+                text(field(row, rev_idx, "Mã khách hàng")),
+            )
+        )
         revenue_by_key[(order_id, code)][0] += qty
         revenue_by_key[(order_id, code)][1] += net
         revenue_by_sku[code][0] += qty
         revenue_by_sku[code][1] += net
         revenue_by_sku[code][2] += cogs
-    revenue_rows = payload_rows(payload, "revenue_rows", 18, failures)
+    revenue_rows = payload_rows(payload, "revenue_rows", 19, failures)
     if len(revenue_rows) != len(revenue_expected):
         failures.append(
             f"Revenue row count: source {len(revenue_expected)}, payload {len(revenue_rows)}"
@@ -386,6 +396,7 @@ def validate(
             number(row[9]),
             number(row[10]),
             text(row[11]),
+            text(row[12]),
         )
         for row in revenue_rows
     )
@@ -718,7 +729,7 @@ def validate(
                 "CRM exceeds Revenue with no open quantity",
             )
         )
-    for _, code, _, net, cost, order_id in revenue_expected:
+    for _, code, _, net, cost, order_id, _ in revenue_expected:
         if cost > net + 0.5:
             expected_mismatch_keys.add(
                 ("Revenue", f"{order_id} / {code}", "COGS > NET REV SOLD")

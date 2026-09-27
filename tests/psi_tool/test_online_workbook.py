@@ -97,6 +97,7 @@ def test_synthetic_export_is_valid_deterministic_and_safe(
     assert wb["Brand"]["B4"].hyperlink is None
     assert wb["PSI by Product"]["J4"].value == "=H4-I4"
     assert wb["PSI Summary"]["B5"].value == "=SUM('Revenue'!J4:J4)"
+    assert wb["Revenue"]["M3"].value == "CUSTOMER CODE"
     cached = openpyxl.load_workbook(io.BytesIO(content), data_only=True)
     assert cached["PSI by Product"]["J4"].value == 60
     assert cached["PSI by Product"]["K4"].value == 0.6

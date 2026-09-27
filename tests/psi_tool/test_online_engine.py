@@ -225,6 +225,7 @@ def inputs(tmp_path):
         "Đơn hàng",
         "TK Nợ",
         "TK Có",
+        "Mã khách hàng",
     ]
     write_book(
         sources["Revenue"],
@@ -234,11 +235,63 @@ def inputs(tmp_path):
                 [],
                 [],
                 rev_headers,
-                [AS_OF, "SKU", 3, 40, 5, 3, 2, 10, "DH-OPEN", "131", "5111"],
-                [AS_OF, "SKU", 10, 90, 0, 0, 0, 20, "DH-ZERO", "131", "5111"],
-                [AS_OF, "SKU", 11, 110, 0, 0, 0, 30, "DH-OVER", "131", "5111"],
-                [AS_OF, "SKU", 1, 10, 0, 0, 0, 2, "DH-CANCELLED", "131", "5111"],
-                [AS_OF, "SKU", 999, 999, 0, 0, 0, 0, "DH-OPEN", "131", "9999"],
+                [AS_OF, "SKU", 3, 40, 5, 3, 2, 10, "DH-OPEN", "131", "5111", "KH-OPEN"],
+                [
+                    AS_OF,
+                    "SKU",
+                    10,
+                    90,
+                    0,
+                    0,
+                    0,
+                    20,
+                    "DH-ZERO",
+                    "131",
+                    "5111",
+                    "KH-ZERO",
+                ],
+                [
+                    AS_OF,
+                    "SKU",
+                    11,
+                    110,
+                    0,
+                    0,
+                    0,
+                    30,
+                    "DH-OVER",
+                    "131",
+                    "5111",
+                    "KH-OVER",
+                ],
+                [
+                    AS_OF,
+                    "SKU",
+                    1,
+                    10,
+                    0,
+                    0,
+                    0,
+                    2,
+                    "DH-CANCELLED",
+                    "131",
+                    "5111",
+                    "KH-CANCELLED",
+                ],
+                [
+                    AS_OF,
+                    "SKU",
+                    999,
+                    999,
+                    0,
+                    0,
+                    0,
+                    0,
+                    "DH-OPEN",
+                    "131",
+                    "9999",
+                    "KH-OPEN",
+                ],
             ]
         },
     )
@@ -315,6 +368,7 @@ def test_portable_governed_balances_and_all_relations(inputs, monkeypatch, tmp_p
     assert payload["summary"]["inventory_qty"] == 11
     assert len(payload["inventory_rows"]) == 2
     assert payload["revenue_rows"][0][9] == 30
+    assert payload["revenue_rows"][0][12] == "KH-OPEN"
     assert payload["preorder_rows"][0][8:10] == [9, 90]
     assert payload["preorder_excluded_rows"][0][8:10] == [10, 100]
     assert len(payload["preorder_excluded_rows"]) == 1

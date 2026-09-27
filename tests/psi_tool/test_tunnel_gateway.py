@@ -115,7 +115,7 @@ def test_peer_and_duplicate_headers(config_path):
         "not-json",
         "[]",
         "{}",
-        json.dumps({"username": "psi", "password": "short", "public_host": HOST}),
+        json.dumps({"username": "psi", "password": "brief", "public_host": HOST}),
         json.dumps(
             {"username": "psi", "password": PASSWORD, "public_host": "evil.example"}
         ),

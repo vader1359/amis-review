@@ -52,7 +52,7 @@ def load_config(path: str | None) -> dict[str, str] | None:
         )
         if (
             not re.fullmatch(r"[A-Za-z0-9_.-]{1,64}", username)
-            or not 24 <= len(password) <= 256
+            or not 8 <= len(password) <= 256
             or not password.isascii()
             or any(ord(char) < 33 or ord(char) > 126 for char in password)
             or not re.fullmatch(

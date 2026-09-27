@@ -26,7 +26,7 @@ SOURCE_LABELS = (
     "Manual Check",
 )
 RELATION_WIDTHS = (
-    ("revenue_rows", 18),
+    ("revenue_rows", 19),
     ("inventory_rows", 11),
     ("purchase_rows", 15),
     ("po_excluded_rows", 4),

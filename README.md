@@ -19,20 +19,14 @@ python3 scripts/build_audit_report.py
 
 The output workbook is written to the project root.
 
-## PSI Web
+## PSI preview
 
-Run the local PSI upload tool with the bundled Python runtime:
-
-```bash
-/Users/iant1359/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 web/server.py
-```
-
-Then open `http://127.0.0.1:8787`. Upload Product, Purchase/PO, Revenue, Inventory, CRM, Target and the approved `PSI_Manual_Check.xlsx`. Pre-orders are derived from CRM Final less Revenue; `Pre order feedback.xlsx` is not an official source.
-
-Validate Manual Check before generation:
+Run the local acceptance preview on loopback:
 
 ```bash
-/Users/iant1359/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 scripts/validate_manual_check.py
+uv run --extra online python -m uvicorn web.preview:app --host 127.0.0.1 --port 18787
 ```
 
-The current source contract, formulas, mismatch policy and approval workflow are documented in [`docs/PSI_PROCESS_UPTODATE.md`](docs/PSI_PROCESS_UPTODATE.md). `scripts/build_audit_report.py` is retained only for the older reconciliation snapshot and must not be used as the PSI Final generator.
+Open `http://127.0.0.1:18787`. This preview builds validated Drafts; it does not provide shared login or Final publication. See [`docs/PSI_ONLINE_ACCEPTANCE.md`](docs/PSI_ONLINE_ACCEPTANCE.md) for its source contract and limits. The former Supabase shared MVP server and launchers were retired because their engine was absent from this checkout. They are not deployment instructions.
+
+`scripts/build_audit_report.py` is retained only for the older reconciliation snapshot and must not be used as the PSI Final generator.

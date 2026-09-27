@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import unicodedata
 from collections import Counter, defaultdict
 from datetime import date, datetime
@@ -24,12 +25,12 @@ def norm(value: Any) -> str:
 
 
 def num(value: Any) -> float:
-    if value in (None, ""):
+    if value is None or (isinstance(value, str) and not value.strip()):
         return 0.0
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return 0.0
+    result = float(value)
+    if not math.isfinite(result):
+        raise ValueError(value)
+    return result
 
 
 def to_date(value: Any) -> date | None:
@@ -431,6 +432,8 @@ def prepare(sources: dict[str, Path], as_of: date, prior_psi: Path) -> dict[str,
     inventory_source_eligible_rows = 0
     inventory_nonpositive_source_rows = 0
     for source_row, row in enumerate(inventory_source, start=5):
+        if source_row == 5:
+            continue
         warehouse_name = txt(value(row, inventory_idx, "Tên kho"))
         if norm(warehouse_name) == norm("Tổng cộng"):
             continue

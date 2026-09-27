@@ -10,8 +10,9 @@ import re
 import shutil
 import stat
 import tempfile
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
+from zipfile import ZipFile
 
 from openpyxl import load_workbook
 
@@ -297,8 +298,21 @@ def apply_exclusions(snapshots, proposals, as_of: date, author: str):
         if not changed:
             return dict(snapshots)
         output = io.BytesIO()
+        workbook.properties.created = datetime(1980, 1, 1, tzinfo=timezone.utc)
         workbook.save(output)
-        content = output.getvalue()
+        normalized = io.BytesIO()
+        with ZipFile(output) as source, ZipFile(normalized, "w") as target:
+            for entry in source.infolist():
+                entry.date_time = (1980, 1, 1, 0, 0, 0)
+                data = source.read(entry.filename)
+                if entry.filename == "docProps/core.xml":
+                    data = re.sub(
+                        rb"(<dcterms:modified[^>]*>)[^<]*(</dcterms:modified>)",
+                        rb"\g<1>1980-01-01T00:00:00Z\g<2>",
+                        data,
+                    )
+                target.writestr(entry, data)
+        content = normalized.getvalue()
         load_manual_check(content)
         return {
             **snapshots,

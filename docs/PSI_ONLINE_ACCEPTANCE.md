@@ -103,8 +103,9 @@ Billing and the remaining bootstrap prerequisites are described in
 `PSI_CLOUD_SETUP.md`. The online Draft storage extension below is separate from GCP deployment,
 production cutover and Power BI publication.
 
-The browser entry point is intentionally separate from legacy `web/server.py`;
-the old Supabase implementation must not be mistaken for the approved service.
+The obsolete Supabase shared MVP server and its launchers were retired. Its
+engine was never present in this checkout. The loopback preview is an acceptance
+harness, not an authenticated shared service or a deployment target.
 
 
 ## Online Draft storage extension (2026-09-06)

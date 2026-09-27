@@ -1,5 +1,6 @@
 import io
 import stat
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
@@ -138,6 +139,31 @@ def test_governed_exclusions_keep_sources_and_are_idempotent():
     )
     assert cell.value == "=not a formula" and cell.data_type == "s"
     workbook.close()
+
+
+def test_same_exclusion_replay_produces_identical_snapshot_bytes() -> None:
+    selected, _ = sources()
+    decision = {
+        "id": "review-test",
+        "action": "exclude_order",
+        "order_id": "DH-OPEN",
+        "note": "Cancelled",
+        "author": "KT",
+        "approved_by": "Approver",
+        "effective_from": "2026-09-03",
+    }
+    from web.review_sources import merge_applied_exclusions
+
+    first = merge_applied_exclusions(selected, [decision], date(2026, 9, 3))
+    time.sleep(2.1)
+    second = merge_applied_exclusions(selected, [decision], date(2026, 9, 3))
+
+    assert first["manual_check"] == second["manual_check"]
+    assert selected["manual_check"].content != first["manual_check"].content
+    registry = load_manual_check(second["manual_check"].content)
+    rule = registry.order_exclusions[0]
+    assert rule.approved_by == "Approver"
+    assert rule.effective_from == date(2026, 9, 3)
 
 
 @pytest.mark.parametrize(

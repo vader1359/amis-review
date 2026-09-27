@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from datetime import date
+from pathlib import Path
 
 import pytest
 from openpyxl import Workbook, load_workbook
@@ -19,9 +21,42 @@ from psi_tool._online_manual_check import (
     make_order_exclusion_fingerprint,
     make_preorder_fingerprint,
 )
+from psi_tool._online_prepare import num
+from psi_tool._online_validate import number
 from psi_tool.online_engine import prepare_payload, validate_payload
 
 AS_OF = date(2026, 9, 3)
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [(None, 0.0), ("", 0.0), (" ", 0.0), (-5, -5.0), ("-5", -5.0)],
+)
+def test_blank_and_signed_numbers_remain_supported(
+    raw: str | int | None, expected: float
+) -> None:
+    assert num(raw) == expected
+    assert number(raw) == expected
+
+
+def test_nonempty_invalid_revenue_number_fails_preparation_and_independent_validation(
+    inputs: tuple[dict[str, Path], Path],
+) -> None:
+    sources, prior_psi = inputs
+    valid_payload = prepare_payload(sources, AS_OF, prior_psi)
+    workbook = load_workbook(sources["Revenue"])
+    workbook["SỔ CHI TIẾT BÁN HÀNG"]["D5"] = "1,000"
+    workbook.save(sources["Revenue"])
+    workbook.close()
+    valid_payload["source_hashes"]["Revenue"] = hashlib.sha256(
+        sources["Revenue"].read_bytes()
+    ).hexdigest()
+
+    with pytest.raises(ValueError, match="1,000"):
+        _ = prepare_payload(sources, AS_OF, prior_psi)
+    result = validate_payload(valid_payload, sources, AS_OF, prior_psi)
+    assert result["status"] == "FAIL"
+    assert "1,000" in result["failures"][0]
 
 
 @pytest.mark.parametrize(

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import unicodedata
 from collections import Counter, defaultdict
 from collections.abc import Iterable
@@ -29,12 +30,12 @@ def norm(value: Any) -> str:
 
 
 def number(value: Any) -> float:
-    if value in (None, ""):
+    if value is None or (isinstance(value, str) and not value.strip()):
         return 0.0
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return 0.0
+    result = float(value)
+    if not math.isfinite(result):
+        raise ValueError(value)
+    return result
 
 
 def date_value(value: Any) -> date | None:
@@ -421,6 +422,8 @@ def validate(
     inventory_raw: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0])
     inventory_raw_missing_sku: list[str] = []
     for source_no, row in enumerate(inv_source, start=6):
+        if source_no == 6:
+            continue
         warehouse_name = text(field(row, inv_idx, "Tên kho")) or text(
             row[0] if len(row) > 0 else ""
         )

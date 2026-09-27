@@ -1,0 +1,27 @@
+{
+  "scenario": "isolated local PostgreSQL migration and corrected PSI fixture load",
+  "invocation": "psql -f infra/sql/psi_preview_reports.sql; psql -f infra/powerbi/001_psi_powerbi_read_model.sql; load corrected-payload.json and refresh-data.json; query eight read-model views",
+  "status": "PASS",
+  "observed_at": "2026-09-09T12:40:00+07:00",
+  "database": "temporary local PostgreSQL on 127.0.0.1:55434",
+  "source_fixture": "corrected payload and refresh data for PSI cutoff 2026-09-03",
+  "view_row_counts": {
+    "inventory": 3168,
+    "revenue": 8786,
+    "preorder": 402,
+    "sales_crm": 8426,
+    "purchase": 2605,
+    "product_reference": 5495,
+    "target_reference": 21,
+    "stock_in": 0
+  },
+  "derived_column_checks": {
+    "inventory_value_per_unit_missing_when_quantity_nonzero": 0,
+    "revenue_cost_per_unit_missing_when_quantity_nonzero": 0,
+    "purchase_warehouse_value_per_unit_missing_when_quantity_nonzero": 0
+  },
+  "limits": [
+    "This validates SQL application, fixture row cardinality and selected derived values only.",
+    "It does not prove each row value equals the embedded Power BI snapshot, display rendering, Neon deployment, gateway connectivity or Power BI refresh."
+  ]
+}

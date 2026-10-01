@@ -96,6 +96,6 @@ convention = "google"
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["test", "tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 addopts = ["-ra", "--strict-config", "--strict-markers"]
 filterwarnings = ["error"]

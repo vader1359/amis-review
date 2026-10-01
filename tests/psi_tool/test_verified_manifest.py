@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import shutil
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -53,7 +54,10 @@ def test_verified_manifest_loads_two_workspace_roots_without_cwd_cross_talk(
         for source in sources:
             destination = root / source.relative_path
             destination.parent.mkdir(parents=True, exist_ok=True)
-            os.link(PROJECT_ROOT / source.relative_path, destination)
+            try:
+                os.link(PROJECT_ROOT / source.relative_path, destination)
+            except OSError:  # tmp on a different filesystem
+                shutil.copy2(PROJECT_ROOT / source.relative_path, destination)
 
     def reject_chdir(
         _path: str | bytes | os.PathLike[str] | os.PathLike[bytes],

@@ -4,6 +4,8 @@ from datetime import date
 from decimal import Decimal
 from pathlib import Path
 
+import pytest
+
 from psi_engine.manual_check import (
     ExceptionRule,
     ManualCheckRegistry,
@@ -176,6 +178,8 @@ def test_new_unmatched_issue_stays_visible() -> None:
 
 def test_canonical_workbook_loads_and_has_expected_migrated_counts() -> None:
     workbook = Path(__file__).resolve().parents[1] / "input" / "PSI_Manual_Check.xlsx"
+    if not workbook.exists():
+        pytest.skip("input/PSI_Manual_Check.xlsx is not tracked in the repository")
     loaded = load_manual_check(workbook)
     assert loaded.summary(AS_OF) == {
         "exceptions": 110,

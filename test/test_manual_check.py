@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from datetime import date
 from decimal import Decimal
+from hashlib import sha256
+import os
 from pathlib import Path
 
+from openpyxl import load_workbook
 import pytest
 
 from psi_engine.manual_check import (
@@ -176,11 +179,18 @@ def test_new_unmatched_issue_stays_visible() -> None:
     assert suppressed == []
 
 
-def test_canonical_workbook_loads_and_has_expected_migrated_counts() -> None:
-    workbook = Path(__file__).resolve().parents[1] / "input" / "PSI_Manual_Check.xlsx"
+def test_migration_snapshot_has_expected_counts() -> None:
+    workbook = Path(os.environ.get(
+        "MANUAL_CHECK_MIGRATION_WORKBOOK",
+        str(Path(__file__).resolve().parents[1] / "input" / "PSI_Manual_Check.xlsx"),
+    ))
     if not workbook.exists():
-        pytest.skip("input/PSI_Manual_Check.xlsx is not tracked in the repository")
-    loaded = load_manual_check(workbook)
+        pytest.skip("Private migration snapshot is unavailable; set MANUAL_CHECK_MIGRATION_WORKBOOK")
+    snapshot = workbook.read_bytes()
+    expected_hash = "21b0fae9a8ca06b1a89076a31ebd1fd5737ce8bb7b2742d0f1ffcd449002014a"
+    if sha256(snapshot).hexdigest() != expected_hash:
+        pytest.skip(f"Private migration snapshot SHA-256 differs from {expected_hash}")
+    loaded = load_manual_check(snapshot)
     assert loaded.summary(AS_OF) == {
         "exceptions": 110,
         "approved_active_exceptions": 97,
@@ -190,3 +200,43 @@ def test_canonical_workbook_loads_and_has_expected_migrated_counts() -> None:
         "approved_active_sku_mappings": 16,
     }
     assert loaded.map_sku("USMUS-11219.3", as_of=AS_OF) == "USMUS-11219.30"
+
+
+@pytest.mark.parametrize("as_of", [AS_OF, date(2026, 8, 14), date(2026, 8, 27)])
+def test_current_workbook_validates_and_filters_as_of(as_of: date) -> None:
+    workbook = Path(__file__).resolve().parents[1] / "input" / "PSI_Manual_Check.xlsx"
+    if not workbook.exists():
+        pytest.skip("Current private input/PSI_Manual_Check.xlsx is not tracked in the repository")
+    contents = workbook.read_bytes()
+    loaded = load_manual_check(contents)
+    # Count directly from workbook cells, independently of registry is_active().
+    source = load_workbook(workbook, read_only=True, data_only=True)
+    expected = {}
+    try:
+        for sheet, metric in (
+            ("Exceptions", "approved_active_exceptions"),
+            ("Preorder Exclusions", "approved_active_preorder_exclusions"),
+            ("Order Exclusions", "approved_active_order_exclusions"),
+            ("SKU Mappings", "approved_active_sku_mappings"),
+        ):
+            rows = source[sheet].iter_rows(values_only=True)
+            headers = next(
+                row for row in rows
+                if {"Status", "Effective From", "Effective To"}.issubset(row)
+            )
+            records = [dict(zip(headers, row)) for row in rows if row[0]]
+            assert records, f"{sheet} must exercise the loader"
+            expected[metric] = sum(
+                str(row["Status"]).strip().upper() == "APPROVED"
+                and (not row["Effective From"] or str(row["Effective From"])[:10] <= as_of.isoformat())
+                and (not row["Effective To"] or as_of.isoformat() <= str(row["Effective To"])[:10])
+                for row in records
+            )
+            if sheet == "Exceptions":
+                expected["exceptions"] = len(records)
+                expected["open_exceptions"] = sum(
+                    str(row["Status"]).strip().upper() == "OPEN" for row in records
+                )
+    finally:
+        source.close()
+    assert loaded.summary(as_of) == expected
